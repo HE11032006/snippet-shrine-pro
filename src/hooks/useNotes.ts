@@ -140,6 +140,14 @@ export function useNotes() {
     return Array.from(tags).sort();
   }, [notes]);
 
+  const importNotes = useCallback((importedNotes: Note[]) => {
+    setNotes(prev => {
+      const existingIds = new Set(prev.map(n => n.id));
+      const newNotes = importedNotes.filter(n => !existingIds.has(n.id));
+      return [...newNotes, ...prev];
+    });
+  }, []);
+
   return {
     notes,
     isLoaded,
@@ -148,5 +156,6 @@ export function useNotes() {
     deleteNote,
     getCategories,
     getAllTags,
+    importNotes,
   };
 }
