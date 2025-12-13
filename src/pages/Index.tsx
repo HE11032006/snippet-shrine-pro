@@ -20,7 +20,7 @@ const Index = () => {
     document.documentElement.classList.add('dark');
   }, []);
 
-  const categories = useMemo(() => getCategories(), [getCategories]);
+  const categories = useMemo(() => getCategories(), [notes, getCategories]);
 
   const filteredNotes = useMemo(() => {
     let result = notes;
@@ -81,12 +81,13 @@ const Index = () => {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:flex">
         <Sidebar
           categories={categories}
           selectedCategory={selectedCategory}
           onSelectCategory={setSelectedCategory}
           onNewNote={handleNewNote}
+          notesCount={notes.length}
         />
       </div>
 
