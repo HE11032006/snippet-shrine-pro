@@ -75,10 +75,6 @@ export function NoteForm({ note, categories, onSave, onCancel }: NoteFormProps) 
       toast({ title: 'Erreur', description: 'La catégorie est requise.', variant: 'destructive' });
       return;
     }
-    if (!formData.code.trim()) {
-      toast({ title: 'Erreur', description: 'Le code est requis.', variant: 'destructive' });
-      return;
-    }
 
     onSave(formData);
     toast({
@@ -102,9 +98,12 @@ export function NoteForm({ note, categories, onSave, onCancel }: NoteFormProps) 
     }));
   };
 
-  const handleAddCategory = () => {
-    if (newCategory.trim()) {
-      setFormData(prev => ({ ...prev, category: newCategory.trim() }));
+  const handleAddCategory = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    const trimmed = newCategory.trim();
+    if (trimmed) {
+      setFormData(prev => ({ ...prev, category: trimmed }));
       setNewCategory('');
       setShowNewCategory(false);
     }
@@ -134,9 +133,16 @@ export function NoteForm({ note, categories, onSave, onCancel }: NoteFormProps) 
                   <Input
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddCategory();
+                      }
+                    }}
                     placeholder="Nouvelle catégorie"
+                    autoFocus
                   />
-                  <Button type="button" variant="secondary" onClick={handleAddCategory}>
+                  <Button type="button" variant="secondary" onClick={(e) => handleAddCategory(e)}>
                     OK
                   </Button>
                   <Button type="button" variant="ghost" onClick={() => setShowNewCategory(false)}>
@@ -203,9 +209,9 @@ export function NoteForm({ note, categories, onSave, onCancel }: NoteFormProps) 
             />
           </div>
 
-          {/* Code */}
+          {/* Code (optionnel) */}
           <div className="space-y-2">
-            <Label>Code</Label>
+            <Label>Code <span className="text-muted-foreground text-xs">(optionnel)</span></Label>
             <Textarea
               value={formData.code}
               onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
