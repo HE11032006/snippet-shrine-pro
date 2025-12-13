@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { FileCode2 } from 'lucide-react';
 import { useNotes } from '@/hooks/useNotes';
 import { Note, NoteFormData } from '@/types/note';
@@ -7,20 +7,21 @@ import { MobileSidebar } from '@/components/MobileSidebar';
 import { SearchBar } from '@/components/SearchBar';
 import { NoteCard } from '@/components/NoteCard';
 import { NoteForm } from '@/components/NoteForm';
+import { useTheme } from '@/hooks/useTheme';
 
 const Index = () => {
-  const { notes, isLoaded, addNote, updateNote, deleteNote, getCategories } = useNotes();
+  const { notes, isLoaded, addNote, updateNote, deleteNote, getCategories, getAllTags, importNotes } = useNotes();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
-
-  // Apply dark mode by default
-  useEffect(() => {
-    document.documentElement.classList.add('dark');
-  }, []);
+  
+  // Initialize theme
+  useTheme();
 
   const categories = useMemo(() => getCategories(), [notes, getCategories]);
+  const allTags = useMemo(() => getAllTags(), [notes, getAllTags]);
 
   const filteredNotes = useMemo(() => {
     let result = notes;
@@ -28,6 +29,13 @@ const Index = () => {
     // Filter by category
     if (selectedCategory) {
       result = result.filter(note => note.category === selectedCategory);
+    }
+
+    // Filter by tags
+    if (selectedTags.length > 0) {
+      result = result.filter(note => 
+        selectedTags.every(tag => note.tags.includes(tag))
+      );
     }
 
     // Filter by search query
@@ -43,7 +51,19 @@ const Index = () => {
     }
 
     return result;
-  }, [notes, selectedCategory, searchQuery]);
+  }, [notes, selectedCategory, selectedTags, searchQuery]);
+
+  const handleToggleTag = useCallback((tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  }, []);
+
+  const handleClearTags = useCallback(() => {
+    setSelectedTags([]);
+  }, []);
 
   const handleNewNote = () => {
     setEditingNote(null);
@@ -88,6 +108,12 @@ const Index = () => {
           onSelectCategory={setSelectedCategory}
           onNewNote={handleNewNote}
           notesCount={notes.length}
+          notes={notes}
+          onImport={importNotes}
+          tags={allTags}
+          selectedTags={selectedTags}
+          onToggleTag={handleToggleTag}
+          onClearTags={handleClearTags}
         />
       </div>
 

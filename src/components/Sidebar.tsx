@@ -3,6 +3,10 @@ import { Code2, FolderOpen, Hash, Plus, ChevronLeft, ChevronRight } from 'lucide
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { ExportImport } from '@/components/ExportImport';
+import { TagFilter } from '@/components/TagFilter';
+import { Note } from '@/types/note';
 
 interface SidebarProps {
   categories: string[];
@@ -10,9 +14,27 @@ interface SidebarProps {
   onSelectCategory: (category: string | null) => void;
   onNewNote: () => void;
   notesCount: number;
+  notes: Note[];
+  onImport: (notes: Note[]) => void;
+  tags: string[];
+  selectedTags: string[];
+  onToggleTag: (tag: string) => void;
+  onClearTags: () => void;
 }
 
-export function Sidebar({ categories, selectedCategory, onSelectCategory, onNewNote, notesCount }: SidebarProps) {
+export function Sidebar({ 
+  categories, 
+  selectedCategory, 
+  onSelectCategory, 
+  onNewNote, 
+  notesCount,
+  notes,
+  onImport,
+  tags,
+  selectedTags,
+  onToggleTag,
+  onClearTags
+}: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -64,7 +86,7 @@ export function Sidebar({ categories, selectedCategory, onSelectCategory, onNewN
       </div>
 
       {/* Categories */}
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-y-auto p-3 space-y-4">
         {!collapsed && (
           <div className="mb-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Catégories
@@ -135,10 +157,26 @@ export function Sidebar({ categories, selectedCategory, onSelectCategory, onNewN
             )
           ))}
         </nav>
+
+        {/* Tag Filter */}
+        {!collapsed && (
+          <TagFilter
+            tags={tags}
+            selectedTags={selectedTags}
+            onToggleTag={onToggleTag}
+            onClearTags={onClearTags}
+          />
+        )}
       </div>
 
-      {/* Collapse Toggle & Footer */}
-      <div className="p-3 border-t border-sidebar-border">
+      {/* Footer with tools */}
+      <div className="p-3 border-t border-sidebar-border space-y-2">
+        {!collapsed && (
+          <div className="flex items-center justify-between">
+            <ExportImport notes={notes} onImport={onImport} />
+            <ThemeToggle />
+          </div>
+        )}
         <Button
           variant="ghost"
           size="sm"
