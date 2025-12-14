@@ -45,15 +45,15 @@ export function Sidebar({
       )}
     >
       {/* Logo */}
-      <div className="p-3 border-b border-sidebar-border">
+      <div className="p-4 border-b border-sidebar-border bg-gradient-to-r from-primary/5 to-transparent">
         <div className={cn("flex items-center", collapsed ? "justify-center" : "gap-3")}>
-          <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+          <div className="p-2.5 rounded-xl bg-primary/15 shrink-0 shadow-lg shadow-primary/10">
             <Code2 className="w-5 h-5 text-primary" />
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <h1 className="font-semibold text-foreground truncate">Code Notes</h1>
-              <p className="text-xs text-muted-foreground">{notesCount} snippets</p>
+              <h1 className="font-bold text-foreground truncate gradient-text">Code Notes</h1>
+              <p className="text-xs text-muted-foreground font-medium">{notesCount} snippets</p>
             </div>
           )}
         </div>

@@ -182,6 +182,7 @@ const Index = () => {
         <NoteForm
           note={editingNote}
           categories={categories}
+          existingTags={allTags}
           onSave={handleSaveNote}
           onCancel={handleCancelForm}
         />
