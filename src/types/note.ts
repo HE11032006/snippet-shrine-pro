@@ -1,6 +1,7 @@
 export interface Note {
   id: string;
   category: string;
+  subcategory?: string;
   title: string;
   description: string;
   code: string;

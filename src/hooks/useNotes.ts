@@ -140,6 +140,30 @@ export function useNotes() {
     return Array.from(tags).sort();
   }, [notes]);
 
+  const getSubcategories = useCallback((category: string): string[] => {
+    const subcategories = new Set(
+      notes
+        .filter(note => note.category === category && note.subcategory)
+        .map(note => note.subcategory!)
+    );
+    return Array.from(subcategories).sort();
+  }, [notes]);
+
+  const duplicateNote = useCallback((id: string): Note | null => {
+    const noteToDuplicate = notes.find(n => n.id === id);
+    if (!noteToDuplicate) return null;
+    
+    const newNote: Note = {
+      ...noteToDuplicate,
+      id: uuidv4(),
+      title: `${noteToDuplicate.title} (copie)`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setNotes(prev => [newNote, ...prev]);
+    return newNote;
+  }, [notes]);
+
   const importNotes = useCallback((importedNotes: Note[]) => {
     setNotes(prev => {
       const existingIds = new Set(prev.map(n => n.id));
@@ -155,7 +179,9 @@ export function useNotes() {
     updateNote,
     deleteNote,
     getCategories,
+    getSubcategories,
     getAllTags,
+    duplicateNote,
     importNotes,
   };
 }

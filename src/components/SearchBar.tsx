@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
@@ -6,25 +7,30 @@ interface SearchBarProps {
   onChange: (value: string) => void;
 }
 
-export function SearchBar({ value, onChange }: SearchBarProps) {
-  return (
-    <div className="relative">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-      <Input
-        type="text"
-        placeholder="Rechercher par titre, tags ou contenu..."
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="pl-10 pr-10 bg-secondary/50 border-border/50 focus:bg-card"
-      />
-      {value && (
-        <button
-          onClick={() => onChange('')}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      )}
-    </div>
-  );
-}
+export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
+  ({ value, onChange }, ref) => {
+    return (
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          ref={ref}
+          type="text"
+          placeholder="Rechercher par titre, tags ou contenu..."
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="pl-10 pr-10 bg-secondary/50 border-border/50 focus:bg-card"
+        />
+        {value && (
+          <button
+            onClick={() => onChange('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+    );
+  }
+);
+
+SearchBar.displayName = 'SearchBar';
