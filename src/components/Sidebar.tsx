@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Code2, FolderOpen, Hash, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Code2, FolderOpen, Hash, Plus, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -11,7 +11,8 @@ import { Note } from '@/types/note';
 interface SidebarProps {
   categories: string[];
   selectedCategory: string | null;
-  onSelectCategory: (category: string | null) => void;
+  selectedSubcategory: string | null;
+  onSelectCategory: (category: string | null, subcategory?: string | null) => void;
   onNewNote: () => void;
   notesCount: number;
   notes: Note[];
@@ -24,7 +25,8 @@ interface SidebarProps {
 
 export function Sidebar({ 
   categories, 
-  selectedCategory, 
+  selectedCategory,
+  selectedSubcategory,
   onSelectCategory, 
   onNewNote, 
   notesCount,
@@ -36,6 +38,44 @@ export function Sidebar({
   onClearTags
 }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+
+  // Get subcategories for each category
+  const subcategoriesByCategory = useMemo(() => {
+    const result: Record<string, string[]> = {};
+    notes.forEach(note => {
+      if (note.subcategory) {
+        if (!result[note.category]) {
+          result[note.category] = [];
+        }
+        if (!result[note.category].includes(note.subcategory)) {
+          result[note.category].push(note.subcategory);
+        }
+      }
+    });
+    // Sort subcategories
+    Object.keys(result).forEach(cat => {
+      result[cat].sort();
+    });
+    return result;
+  }, [notes]);
+
+  const toggleCategoryExpand = (category: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const handleCategoryClick = (category: string | null) => {
+    onSelectCategory(category, null);
+  };
+
+  const handleSubcategoryClick = (category: string, subcategory: string) => {
+    onSelectCategory(category, subcategory);
+  };
 
   return (
     <aside 
@@ -72,16 +112,21 @@ export function Sidebar({
                 <Plus className="w-5 h-5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">Nouvelle Note</TooltipContent>
+            <TooltipContent side="right">Nouvelle Note (Ctrl+N)</TooltipContent>
           </Tooltip>
         ) : (
-          <Button
-            onClick={onNewNote}
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nouvelle Note
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={onNewNote}
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nouvelle Note
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Ctrl+N</TooltipContent>
+          </Tooltip>
         )}
       </div>
 
@@ -98,7 +143,7 @@ export function Sidebar({
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  onClick={() => onSelectCategory(null)}
+                  onClick={() => handleCategoryClick(null)}
                   className={cn(
                     'w-full flex items-center justify-center p-2.5 rounded-lg transition-all duration-200',
                     selectedCategory === null 
@@ -113,10 +158,10 @@ export function Sidebar({
             </Tooltip>
           ) : (
             <button
-              onClick={() => onSelectCategory(null)}
+              onClick={() => handleCategoryClick(null)}
               className={cn(
                 'sidebar-item w-full',
-                selectedCategory === null && 'active'
+                selectedCategory === null && !selectedSubcategory && 'active'
               )}
             >
               <FolderOpen className="w-4 h-4" />
@@ -124,15 +169,20 @@ export function Sidebar({
             </button>
           )}
 
-          {categories.map(category => (
-            collapsed ? (
+          {categories.map(category => {
+            const subcategories = subcategoriesByCategory[category] || [];
+            const hasSubcategories = subcategories.length > 0;
+            const isExpanded = expandedCategories.includes(category);
+            const isSelected = selectedCategory === category;
+
+            return collapsed ? (
               <Tooltip key={category}>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => onSelectCategory(category)}
+                    onClick={() => handleCategoryClick(category)}
                     className={cn(
                       'w-full flex items-center justify-center p-2.5 rounded-lg transition-all duration-200',
-                      selectedCategory === category 
+                      isSelected
                         ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
                         : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
                     )}
@@ -143,19 +193,51 @@ export function Sidebar({
                 <TooltipContent side="right">{category}</TooltipContent>
               </Tooltip>
             ) : (
-              <button
-                key={category}
-                onClick={() => onSelectCategory(category)}
-                className={cn(
-                  'sidebar-item w-full',
-                  selectedCategory === category && 'active'
+              <div key={category}>
+                <button
+                  onClick={() => handleCategoryClick(category)}
+                  className={cn(
+                    'sidebar-item w-full group',
+                    isSelected && !selectedSubcategory && 'active'
+                  )}
+                >
+                  <Hash className="w-4 h-4" />
+                  <span className="flex-1 text-left">{category}</span>
+                  {hasSubcategories && (
+                    <span
+                      onClick={(e) => toggleCategoryExpand(category, e)}
+                      className="p-1 hover:bg-sidebar-accent rounded transition-colors"
+                    >
+                      <ChevronDown className={cn(
+                        "w-3 h-3 transition-transform",
+                        isExpanded && "rotate-180"
+                      )} />
+                    </span>
+                  )}
+                </button>
+                
+                {/* Subcategories */}
+                {hasSubcategories && isExpanded && (
+                  <div className="ml-6 mt-1 space-y-1 border-l-2 border-border pl-3">
+                    {subcategories.map(sub => (
+                      <button
+                        key={sub}
+                        onClick={() => handleSubcategoryClick(category, sub)}
+                        className={cn(
+                          'w-full text-left px-3 py-1.5 rounded-lg text-sm transition-all duration-200',
+                          selectedCategory === category && selectedSubcategory === sub
+                            ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50'
+                        )}
+                      >
+                        {sub}
+                      </button>
+                    ))}
+                  </div>
                 )}
-              >
-                <Hash className="w-4 h-4" />
-                {category}
-              </button>
-            )
-          ))}
+              </div>
+            );
+          })}
         </nav>
 
         {/* Tag Filter */}

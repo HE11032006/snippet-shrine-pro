@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
-import { X, Plus, Sparkles, Tag } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { X, Plus, Sparkles, Tag, Eye, Edit2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { Note, NoteFormData } from '@/types/note';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,11 +8,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface NoteFormProps {
   note?: Note | null;
   categories: string[];
   existingTags?: string[];
+  existingSubcategories?: Record<string, string[]>;
   onSave: (data: NoteFormData) => void;
   onCancel: () => void;
 }
@@ -33,13 +36,34 @@ const LANGUAGES = [
   { value: 'ruby', label: 'Ruby' },
   { value: 'swift', label: 'Swift' },
   { value: 'kotlin', label: 'Kotlin' },
+  { value: 'c', label: 'C' },
+  { value: 'cpp', label: 'C++' },
+  { value: 'lua', label: 'Lua' },
+  { value: 'perl', label: 'Perl' },
+  { value: 'scala', label: 'Scala' },
+  { value: 'r', label: 'R' },
+  { value: 'dart', label: 'Dart' },
+  { value: 'elixir', label: 'Elixir' },
+  { value: 'haskell', label: 'Haskell' },
+  { value: 'yaml', label: 'YAML' },
+  { value: 'toml', label: 'TOML' },
+  { value: 'graphql', label: 'GraphQL' },
+  { value: 'dockerfile', label: 'Dockerfile' },
+  { value: 'markdown', label: 'Markdown' },
+  { value: 'powershell', label: 'PowerShell' },
+  { value: 'vbnet', label: 'VB.NET' },
+  { value: 'objectivec', label: 'Objective-C' },
+  { value: 'asm6502', label: 'Assembly' },
+  { value: 'solidity', label: 'Solidity' },
+  { value: 'zig', label: 'Zig' },
 ];
 
 const DEFAULT_CATEGORIES = ['Python', 'JavaScript', 'TypeScript', 'CSS', 'HTML', 'SQL', 'Bash', 'Autre'];
 
-export function NoteForm({ note, categories, existingTags = [], onSave, onCancel }: NoteFormProps) {
+export function NoteForm({ note, categories, existingTags = [], existingSubcategories = {}, onSave, onCancel }: NoteFormProps) {
   const [formData, setFormData] = useState<NoteFormData>({
     category: '',
+    subcategory: '',
     title: '',
     description: '',
     code: '',
@@ -48,10 +72,14 @@ export function NoteForm({ note, categories, existingTags = [], onSave, onCancel
   });
   const [tagInput, setTagInput] = useState('');
   const [newCategory, setNewCategory] = useState('');
+  const [newSubcategory, setNewSubcategory] = useState('');
   const [showNewCategory, setShowNewCategory] = useState(false);
+  const [showNewSubcategory, setShowNewSubcategory] = useState(false);
   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
+  const [previewMode, setPreviewMode] = useState<'write' | 'preview'>('write');
 
   const allCategories = [...new Set([...DEFAULT_CATEGORIES, ...categories])];
+  const subcategoriesForCategory = formData.category ? (existingSubcategories[formData.category] || []) : [];
 
   // Filter tag suggestions based on input
   const tagSuggestions = useMemo(() => {
@@ -66,6 +94,7 @@ export function NoteForm({ note, categories, existingTags = [], onSave, onCancel
     if (note) {
       setFormData({
         category: note.category,
+        subcategory: note.subcategory || '',
         title: note.title,
         description: note.description,
         code: note.code,
@@ -75,8 +104,8 @@ export function NoteForm({ note, categories, existingTags = [], onSave, onCancel
     }
   }, [note]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback((e?: React.FormEvent) => {
+    e?.preventDefault();
     
     if (!formData.title.trim()) {
       toast({ title: 'Erreur', description: 'Le titre est requis.', variant: 'destructive' });
@@ -92,7 +121,13 @@ export function NoteForm({ note, categories, existingTags = [], onSave, onCancel
       title: note ? 'Note modifiée' : 'Note créée',
       description: note ? 'La note a été modifiée avec succès.' : 'La note a été créée avec succès.',
     });
-  };
+  }, [formData, note, onSave]);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onSave: handleSubmit,
+    onCancel,
+  }, true);
 
   const addTag = (tag?: string) => {
     const tagToAdd = (tag || tagInput).trim().toLowerCase();
@@ -121,18 +156,32 @@ export function NoteForm({ note, categories, existingTags = [], onSave, onCancel
     }
   };
 
+  const handleAddSubcategory = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    const trimmed = newSubcategory.trim();
+    if (trimmed) {
+      setFormData(prev => ({ ...prev, subcategory: trimmed }));
+      setNewSubcategory('');
+      setShowNewSubcategory(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="glass-panel rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden animate-scale-in">
+      <div className="glass-panel rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border/50 bg-gradient-to-r from-primary/5 to-transparent">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-primary/10">
               <Sparkles className="w-5 h-5 text-primary" />
             </div>
-            <h2 className="text-xl font-bold">
-              {note ? 'Modifier la note' : 'Nouvelle note'}
-            </h2>
+            <div>
+              <h2 className="text-xl font-bold">
+                {note ? 'Modifier la note' : 'Nouvelle note'}
+              </h2>
+              <p className="text-xs text-muted-foreground">Ctrl+S pour sauvegarder • Échap pour annuler</p>
+            </div>
           </div>
           <Button variant="ghost" size="icon" onClick={onCancel} className="rounded-xl hover:bg-destructive/10 hover:text-destructive">
             <X className="w-5 h-5" />
@@ -141,8 +190,8 @@ export function NoteForm({ note, categories, existingTags = [], onSave, onCancel
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-5 space-y-5 overflow-y-auto max-h-[calc(90vh-150px)]">
-          {/* Category & Language */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Category, Subcategory & Language */}
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-sm font-semibold">Catégorie</Label>
               {showNewCategory ? (
@@ -171,7 +220,7 @@ export function NoteForm({ note, categories, existingTags = [], onSave, onCancel
                 <div className="flex gap-2">
                   <Select
                     value={formData.category}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, category: value, subcategory: '' }))}
                   >
                     <SelectTrigger className="input-modern">
                       <SelectValue placeholder="Choisir..." />
@@ -188,6 +237,55 @@ export function NoteForm({ note, categories, existingTags = [], onSave, onCancel
                 </div>
               )}
             </div>
+
+            {/* Subcategory */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Sous-catégorie <span className="text-muted-foreground font-normal text-xs">(optionnel)</span></Label>
+              {showNewSubcategory ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={newSubcategory}
+                    onChange={(e) => setNewSubcategory(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddSubcategory();
+                      }
+                    }}
+                    placeholder="Nouvelle sous-catégorie"
+                    className="input-modern"
+                    autoFocus
+                  />
+                  <Button type="button" variant="secondary" onClick={(e) => handleAddSubcategory(e)} className="rounded-xl">
+                    OK
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={() => setShowNewSubcategory(false)} className="rounded-xl">
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Select
+                    value={formData.subcategory || ''}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, subcategory: value }))}
+                  >
+                    <SelectTrigger className="input-modern">
+                      <SelectValue placeholder="Aucune" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Aucune</SelectItem>
+                      {subcategoriesForCategory.map(sub => (
+                        <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" variant="outline" onClick={() => setShowNewSubcategory(true)} className="rounded-xl" disabled={!formData.category}>
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label className="text-sm font-semibold">Langage</Label>
               <Select
@@ -197,7 +295,7 @@ export function NoteForm({ note, categories, existingTags = [], onSave, onCancel
                 <SelectTrigger className="input-modern">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-60">
                   {LANGUAGES.map(lang => (
                     <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
                   ))}
@@ -217,16 +315,55 @@ export function NoteForm({ note, categories, existingTags = [], onSave, onCancel
             />
           </div>
 
-          {/* Description */}
+          {/* Description with Preview */}
           <div className="space-y-2">
-            <Label className="text-sm font-semibold">Description <span className="text-muted-foreground font-normal">(Markdown)</span></Label>
-            <Textarea
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Expliquez le concept, les cas d'utilisation..."
-              rows={4}
-              className="input-modern resize-none"
-            />
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-semibold">Description <span className="text-muted-foreground font-normal">(Markdown)</span></Label>
+              <div className="flex gap-1 p-1 bg-muted rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setPreviewMode('write')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                    previewMode === 'write' 
+                      ? 'bg-background text-foreground shadow-sm' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Edit2 className="w-3 h-3" />
+                  Écrire
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewMode('preview')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                    previewMode === 'preview' 
+                      ? 'bg-background text-foreground shadow-sm' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Eye className="w-3 h-3" />
+                  Prévisualiser
+                </button>
+              </div>
+            </div>
+            
+            {previewMode === 'write' ? (
+              <Textarea
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Expliquez le concept, les cas d'utilisation... (supporte **gras**, *italique*, `code`, listes...)"
+                rows={5}
+                className="input-modern resize-none"
+              />
+            ) : (
+              <div className="min-h-[130px] p-4 rounded-xl border border-border bg-muted/30 prose-custom text-sm overflow-auto">
+                {formData.description ? (
+                  <ReactMarkdown>{formData.description}</ReactMarkdown>
+                ) : (
+                  <p className="text-muted-foreground italic">Aucun contenu à prévisualiser</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Code (optionnel) */}
@@ -313,7 +450,7 @@ export function NoteForm({ note, categories, existingTags = [], onSave, onCancel
           <Button type="button" variant="outline" onClick={onCancel} className="rounded-xl px-6">
             Annuler
           </Button>
-          <Button onClick={handleSubmit} className="btn-gradient rounded-xl px-6">
+          <Button onClick={() => handleSubmit()} className="btn-gradient rounded-xl px-6">
             {note ? 'Enregistrer' : 'Créer la note'}
           </Button>
         </div>

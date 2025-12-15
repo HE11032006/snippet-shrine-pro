@@ -1,4 +1,4 @@
-import { Edit3, Trash2, Copy, Check } from 'lucide-react';
+import { Edit3, Trash2, Copy, Check, Files } from 'lucide-react';
 import { useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -6,14 +6,16 @@ import ReactMarkdown from 'react-markdown';
 import { Note } from '@/types/note';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface NoteCardProps {
   note: Note;
   onEdit: (note: Note) => void;
   onDelete: (id: string) => void;
+  onDuplicate?: (id: string) => void;
 }
 
-export function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
+export function NoteCard({ note, onEdit, onDelete, onDuplicate }: NoteCardProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -36,6 +38,14 @@ export function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
     }
   };
 
+  const handleDuplicate = () => {
+    onDuplicate?.(note.id);
+    toast({
+      title: 'Note dupliquée',
+      description: 'Une copie de la note a été créée.',
+    });
+  };
+
   const hasCode = note.code && note.code.trim().length > 0;
 
   return (
@@ -44,8 +54,11 @@ export function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
       <div className="p-5 border-b border-border/50">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
               <span className="tag-badge">{note.category}</span>
+              {note.subcategory && (
+                <span className="tag-badge bg-secondary/50 text-secondary-foreground">{note.subcategory}</span>
+              )}
               <span className="text-xs text-muted-foreground font-medium">
                 {new Date(note.updatedAt).toLocaleDateString('fr-FR', { 
                   day: 'numeric', 
@@ -57,22 +70,47 @@ export function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
             <h3 className="text-xl font-bold text-foreground">{note.title}</h3>
           </div>
           <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onEdit(note)}
-              className="h-9 w-9 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10"
-            >
-              <Edit3 className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDelete}
-              className="h-9 w-9 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+            {onDuplicate && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleDuplicate}
+                    className="h-9 w-9 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10"
+                  >
+                    <Files className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Dupliquer (Ctrl+D)</TooltipContent>
+              </Tooltip>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onEdit(note)}
+                  className="h-9 w-9 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Modifier</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleDelete}
+                  className="h-9 w-9 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Supprimer</TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>

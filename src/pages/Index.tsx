@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { FileCode2 } from 'lucide-react';
 import { useNotes } from '@/hooks/useNotes';
 import { Note, NoteFormData } from '@/types/note';
@@ -8,20 +8,33 @@ import { SearchBar } from '@/components/SearchBar';
 import { NoteCard } from '@/components/NoteCard';
 import { NoteForm } from '@/components/NoteForm';
 import { useTheme } from '@/hooks/useTheme';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { toast } from '@/hooks/use-toast';
 
 const Index = () => {
-  const { notes, isLoaded, addNote, updateNote, deleteNote, getCategories, getAllTags, importNotes } = useNotes();
+  const { notes, isLoaded, addNote, updateNote, deleteNote, getCategories, getSubcategories, getAllTags, duplicateNote, importNotes } = useNotes();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   
   // Initialize theme
   useTheme();
 
   const categories = useMemo(() => getCategories(), [notes, getCategories]);
   const allTags = useMemo(() => getAllTags(), [notes, getAllTags]);
+  
+  // Get subcategories for all categories (for the form)
+  const allSubcategories = useMemo(() => {
+    const result: Record<string, string[]> = {};
+    categories.forEach(cat => {
+      result[cat] = getSubcategories(cat);
+    });
+    return result;
+  }, [categories, getSubcategories, notes]);
 
   const filteredNotes = useMemo(() => {
     let result = notes;
@@ -29,6 +42,11 @@ const Index = () => {
     // Filter by category
     if (selectedCategory) {
       result = result.filter(note => note.category === selectedCategory);
+    }
+
+    // Filter by subcategory
+    if (selectedSubcategory) {
+      result = result.filter(note => note.subcategory === selectedSubcategory);
     }
 
     // Filter by tags
@@ -51,7 +69,7 @@ const Index = () => {
     }
 
     return result;
-  }, [notes, selectedCategory, selectedTags, searchQuery]);
+  }, [notes, selectedCategory, selectedSubcategory, selectedTags, searchQuery]);
 
   const handleToggleTag = useCallback((tag: string) => {
     setSelectedTags(prev => 
@@ -65,10 +83,10 @@ const Index = () => {
     setSelectedTags([]);
   }, []);
 
-  const handleNewNote = () => {
+  const handleNewNote = useCallback(() => {
     setEditingNote(null);
     setIsFormOpen(true);
-  };
+  }, []);
 
   const handleEditNote = (note: Note) => {
     setEditingNote(note);
@@ -85,10 +103,36 @@ const Index = () => {
     setEditingNote(null);
   };
 
-  const handleCancelForm = () => {
+  const handleCancelForm = useCallback(() => {
     setIsFormOpen(false);
     setEditingNote(null);
-  };
+  }, []);
+
+  const handleSelectCategory = useCallback((category: string | null, subcategory?: string | null) => {
+    setSelectedCategory(category);
+    setSelectedSubcategory(subcategory ?? null);
+  }, []);
+
+  const handleDuplicateNote = useCallback((id: string) => {
+    const newNote = duplicateNote(id);
+    if (newNote) {
+      toast({
+        title: 'Note dupliquée',
+        description: `"${newNote.title}" a été créée.`,
+      });
+    }
+  }, [duplicateNote]);
+
+  const handleFocusSearch = useCallback(() => {
+    searchInputRef.current?.focus();
+  }, []);
+
+  // Global keyboard shortcuts
+  useKeyboardShortcuts({
+    onNewNote: handleNewNote,
+    onSearch: handleFocusSearch,
+    onCancel: handleCancelForm,
+  }, !isFormOpen);
 
   if (!isLoaded) {
     return (
@@ -105,7 +149,8 @@ const Index = () => {
         <Sidebar
           categories={categories}
           selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
+          selectedSubcategory={selectedSubcategory}
+          onSelectCategory={handleSelectCategory}
           onNewNote={handleNewNote}
           notesCount={notes.length}
           notes={notes}
@@ -121,7 +166,7 @@ const Index = () => {
       <MobileSidebar
         categories={categories}
         selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
+        onSelectCategory={(cat) => handleSelectCategory(cat, null)}
         onNewNote={handleNewNote}
       />
 
@@ -131,12 +176,15 @@ const Index = () => {
           {/* Header */}
           <header className="mb-8">
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-              {selectedCategory || 'Toutes les notes'}
+              {selectedSubcategory 
+                ? `${selectedCategory} › ${selectedSubcategory}`
+                : selectedCategory || 'Toutes les notes'}
             </h1>
             <p className="text-muted-foreground mb-6">
               {filteredNotes.length} note{filteredNotes.length !== 1 ? 's' : ''} trouvée{filteredNotes.length !== 1 ? 's' : ''}
+              <span className="text-xs ml-2 opacity-60">(Ctrl+F pour rechercher)</span>
             </p>
-            <SearchBar value={searchQuery} onChange={setSearchQuery} />
+            <SearchBar ref={searchInputRef} value={searchQuery} onChange={setSearchQuery} />
           </header>
 
           {/* Notes Grid */}
@@ -148,6 +196,7 @@ const Index = () => {
                   note={note}
                   onEdit={handleEditNote}
                   onDelete={deleteNote}
+                  onDuplicate={handleDuplicateNote}
                 />
               ))}
             </div>
@@ -183,6 +232,7 @@ const Index = () => {
           note={editingNote}
           categories={categories}
           existingTags={allTags}
+          existingSubcategories={allSubcategories}
           onSave={handleSaveNote}
           onCancel={handleCancelForm}
         />
