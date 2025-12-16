@@ -266,14 +266,14 @@ export function NoteForm({ note, categories, existingTags = [], existingSubcateg
               ) : (
                 <div className="flex gap-2">
                   <Select
-                    value={formData.subcategory || ''}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, subcategory: value }))}
+                    value={formData.subcategory || '_none'}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, subcategory: value === '_none' ? '' : value }))}
                   >
                     <SelectTrigger className="input-modern">
                       <SelectValue placeholder="Aucune" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Aucune</SelectItem>
+                      <SelectItem value="_none">Aucune</SelectItem>
                       {subcategoriesForCategory.map(sub => (
                         <SelectItem key={sub} value={sub}>{sub}</SelectItem>
                       ))}
