@@ -7,15 +7,21 @@ import { Note } from '@/types/note';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Checkbox } from '@/components/ui/checkbox';
+import { parseNoteLinks } from '@/components/NoteLink';
 
 interface NoteCardProps {
   note: Note;
   onEdit: (note: Note) => void;
   onDelete: (id: string) => void;
   onDuplicate?: (id: string) => void;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
+  allNotes?: Note[];
+  onNoteClick?: (noteId: string) => void;
 }
 
-export function NoteCard({ note, onEdit, onDelete, onDuplicate }: NoteCardProps) {
+export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onToggleSelect, allNotes = [], onNoteClick }: NoteCardProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -48,10 +54,42 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate }: NoteCardProps)
 
   const hasCode = note.code && note.code.trim().length > 0;
 
+  // Render description with note links
+  const renderDescription = (text: string) => {
+    if (!onNoteClick || allNotes.length === 0) {
+      return <ReactMarkdown>{text}</ReactMarkdown>;
+    }
+    
+    // Check if text contains note links
+    if (text.includes('[[') && text.includes(']]')) {
+      const parts = parseNoteLinks(text, allNotes, onNoteClick);
+      return (
+        <div className="prose-custom">
+          {parts.map((part, i) => (
+            typeof part === 'string' ? <ReactMarkdown key={i}>{part}</ReactMarkdown> : <span key={i}>{part}</span>
+          ))}
+        </div>
+      );
+    }
+    
+    return <ReactMarkdown>{text}</ReactMarkdown>;
+  };
+
   return (
-    <article className="glass-panel rounded-2xl overflow-hidden animate-slide-up card-hover">
+    <article className={`glass-panel rounded-2xl overflow-hidden animate-slide-up card-hover relative ${isSelected ? 'ring-2 ring-primary' : ''}`}>
+      {/* Selection Checkbox */}
+      {onToggleSelect && (
+        <div className="absolute top-4 left-4 z-10">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => onToggleSelect(note.id)}
+            className="h-5 w-5 border-2"
+          />
+        </div>
+      )}
+      
       {/* Header */}
-      <div className="p-5 border-b border-border/50">
+      <div className={`p-5 border-b border-border/50 ${onToggleSelect ? 'pl-12' : ''}`}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-2 flex-wrap">
@@ -117,9 +155,9 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate }: NoteCardProps)
 
       {/* Description */}
       {note.description && (
-        <div className="px-5 py-4 border-b border-border/50 bg-muted/20">
+        <div className={`py-4 border-b border-border/50 bg-muted/20 ${onToggleSelect ? 'pl-12 pr-5' : 'px-5'}`}>
           <div className="prose-custom text-sm">
-            <ReactMarkdown>{note.description}</ReactMarkdown>
+            {renderDescription(note.description)}
           </div>
         </div>
       )}
