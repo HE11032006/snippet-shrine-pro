@@ -77,9 +77,13 @@ export function NoteForm({ note, categories, existingTags = [], existingSubcateg
   const [showNewSubcategory, setShowNewSubcategory] = useState(false);
   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
   const [previewMode, setPreviewMode] = useState<'write' | 'preview'>('write');
+  const [addedCategories, setAddedCategories] = useState<string[]>([]);
+  const [addedSubcategories, setAddedSubcategories] = useState<Record<string, string[]>>({});
 
-  const allCategories = [...new Set([...DEFAULT_CATEGORIES, ...categories])];
-  const subcategoriesForCategory = formData.category ? (existingSubcategories[formData.category] || []) : [];
+  const allCategories = [...new Set([...DEFAULT_CATEGORIES, ...categories, ...addedCategories])];
+  const subcategoriesForCategory = formData.category 
+    ? [...new Set([...(existingSubcategories[formData.category] || []), ...(addedSubcategories[formData.category] || [])])]
+    : [];
 
   // Filter tag suggestions based on input
   const tagSuggestions = useMemo(() => {
@@ -150,7 +154,8 @@ export function NoteForm({ note, categories, existingTags = [], existingSubcateg
     e?.stopPropagation();
     const trimmed = newCategory.trim();
     if (trimmed) {
-      setFormData(prev => ({ ...prev, category: trimmed }));
+      setAddedCategories(prev => [...new Set([...prev, trimmed])]);
+      setFormData(prev => ({ ...prev, category: trimmed, subcategory: '' }));
       setNewCategory('');
       setShowNewCategory(false);
     }
@@ -160,7 +165,11 @@ export function NoteForm({ note, categories, existingTags = [], existingSubcateg
     e?.preventDefault();
     e?.stopPropagation();
     const trimmed = newSubcategory.trim();
-    if (trimmed) {
+    if (trimmed && formData.category) {
+      setAddedSubcategories(prev => ({
+        ...prev,
+        [formData.category]: [...new Set([...(prev[formData.category] || []), trimmed])]
+      }));
       setFormData(prev => ({ ...prev, subcategory: trimmed }));
       setNewSubcategory('');
       setShowNewSubcategory(false);
