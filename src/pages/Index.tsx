@@ -7,9 +7,11 @@ import { MobileSidebar } from '@/components/MobileSidebar';
 import { SearchBar } from '@/components/SearchBar';
 import { NoteCard } from '@/components/NoteCard';
 import { NoteForm } from '@/components/NoteForm';
+import { SelectionBar } from '@/components/SelectionBar';
 import { useTheme } from '@/hooks/useTheme';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { toast } from '@/hooks/use-toast';
+import { NoteTemplate } from '@/components/NoteTemplates';
 
 const Index = () => {
   const { notes, isLoaded, addNote, updateNote, deleteNote, getCategories, getSubcategories, getAllTags, duplicateNote, importNotes } = useNotes();
@@ -19,6 +21,8 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(new Set());
+  const [initialTemplate, setInitialTemplate] = useState<NoteTemplate | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   
   // Initialize theme
@@ -83,13 +87,15 @@ const Index = () => {
     setSelectedTags([]);
   }, []);
 
-  const handleNewNote = useCallback(() => {
+  const handleNewNote = useCallback((template?: NoteTemplate) => {
     setEditingNote(null);
+    setInitialTemplate(template || null);
     setIsFormOpen(true);
   }, []);
 
   const handleEditNote = (note: Note) => {
     setEditingNote(note);
+    setInitialTemplate(null);
     setIsFormOpen(true);
   };
 
@@ -101,11 +107,13 @@ const Index = () => {
     }
     setIsFormOpen(false);
     setEditingNote(null);
+    setInitialTemplate(null);
   };
 
   const handleCancelForm = useCallback(() => {
     setIsFormOpen(false);
     setEditingNote(null);
+    setInitialTemplate(null);
   }, []);
 
   const handleSelectCategory = useCallback((category: string | null, subcategory?: string | null) => {
@@ -127,9 +135,73 @@ const Index = () => {
     searchInputRef.current?.focus();
   }, []);
 
+  // Selection handlers
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedNoteIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    setSelectedNoteIds(new Set(filteredNotes.map(n => n.id)));
+  }, [filteredNotes]);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedNoteIds(new Set());
+  }, []);
+
+  const handleDeleteSelected = useCallback(() => {
+    if (confirm(`Supprimer ${selectedNoteIds.size} note(s) ?`)) {
+      selectedNoteIds.forEach(id => deleteNote(id));
+      toast({
+        title: 'Notes supprimées',
+        description: `${selectedNoteIds.size} note(s) supprimée(s).`,
+      });
+      setSelectedNoteIds(new Set());
+    }
+  }, [selectedNoteIds, deleteNote]);
+
+  const handleExportSelected = useCallback(() => {
+    const selectedNotes = notes.filter(n => selectedNoteIds.has(n.id));
+    const dataStr = JSON.stringify(selectedNotes, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `notes-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({
+      title: 'Export réussi',
+      description: `${selectedNotes.length} note(s) exportée(s).`,
+    });
+    setSelectedNoteIds(new Set());
+  }, [selectedNoteIds, notes]);
+
+  const handleNoteClick = useCallback((noteId: string) => {
+    const targetNote = notes.find(n => n.id === noteId);
+    if (targetNote) {
+      // Scroll to note and highlight it
+      const element = document.getElementById(`note-${noteId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element.classList.add('ring-2', 'ring-primary');
+        setTimeout(() => {
+          element.classList.remove('ring-2', 'ring-primary');
+        }, 2000);
+      }
+    }
+  }, [notes]);
+
   // Global keyboard shortcuts
   useKeyboardShortcuts({
-    onNewNote: handleNewNote,
+    onNewNote: () => handleNewNote(),
     onSearch: handleFocusSearch,
     onCancel: handleCancelForm,
   }, !isFormOpen);
@@ -191,13 +263,18 @@ const Index = () => {
           {filteredNotes.length > 0 ? (
             <div className="space-y-6">
               {filteredNotes.map(note => (
-                <NoteCard
-                  key={note.id}
-                  note={note}
-                  onEdit={handleEditNote}
-                  onDelete={deleteNote}
-                  onDuplicate={handleDuplicateNote}
-                />
+                <div key={note.id} id={`note-${note.id}`}>
+                  <NoteCard
+                    note={note}
+                    onEdit={handleEditNote}
+                    onDelete={deleteNote}
+                    onDuplicate={handleDuplicateNote}
+                    isSelected={selectedNoteIds.has(note.id)}
+                    onToggleSelect={handleToggleSelect}
+                    allNotes={notes}
+                    onNoteClick={handleNoteClick}
+                  />
+                </div>
               ))}
             </div>
           ) : (
@@ -210,12 +287,12 @@ const Index = () => {
               </h3>
               <p className="text-muted-foreground mb-4">
                 {searchQuery
-                  ? 'Essayez avec d\'autres termes de recherche'
+                  ? "Essayez avec d'autres termes de recherche"
                   : 'Créez votre première note de code'}
               </p>
               {!searchQuery && (
                 <button
-                  onClick={handleNewNote}
+                  onClick={() => handleNewNote()}
                   className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity"
                 >
                   Créer une note
@@ -226,6 +303,16 @@ const Index = () => {
         </div>
       </main>
 
+      {/* Selection Bar */}
+      <SelectionBar
+        selectedCount={selectedNoteIds.size}
+        totalCount={filteredNotes.length}
+        onSelectAll={handleSelectAll}
+        onClearSelection={handleClearSelection}
+        onDeleteSelected={handleDeleteSelected}
+        onExportSelected={handleExportSelected}
+      />
+
       {/* Note Form Modal */}
       {isFormOpen && (
         <NoteForm
@@ -235,6 +322,8 @@ const Index = () => {
           existingSubcategories={allSubcategories}
           onSave={handleSaveNote}
           onCancel={handleCancelForm}
+          onNewNote={handleNewNote}
+          initialTemplate={initialTemplate}
         />
       )}
     </div>

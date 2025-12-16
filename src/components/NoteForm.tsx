@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { NoteTemplates, NoteTemplate } from '@/components/NoteTemplates';
 
 interface NoteFormProps {
   note?: Note | null;
@@ -17,6 +18,8 @@ interface NoteFormProps {
   existingSubcategories?: Record<string, string[]>;
   onSave: (data: NoteFormData) => void;
   onCancel: () => void;
+  onNewNote?: (template?: NoteTemplate) => void;
+  initialTemplate?: NoteTemplate | null;
 }
 
 const LANGUAGES = [
@@ -60,7 +63,7 @@ const LANGUAGES = [
 
 const DEFAULT_CATEGORIES = ['Python', 'JavaScript', 'TypeScript', 'CSS', 'HTML', 'SQL', 'Bash', 'Autre'];
 
-export function NoteForm({ note, categories, existingTags = [], existingSubcategories = {}, onSave, onCancel }: NoteFormProps) {
+export function NoteForm({ note, categories, existingTags = [], existingSubcategories = {}, onSave, onCancel, onNewNote, initialTemplate }: NoteFormProps) {
   const [formData, setFormData] = useState<NoteFormData>({
     category: '',
     subcategory: '',
@@ -105,8 +108,30 @@ export function NoteForm({ note, categories, existingTags = [], existingSubcateg
         language: note.language,
         tags: note.tags,
       });
+    } else if (initialTemplate) {
+      setFormData(prev => ({
+        ...prev,
+        title: initialTemplate.data.title || '',
+        description: initialTemplate.data.description || '',
+        code: initialTemplate.data.code || '',
+        tags: initialTemplate.data.tags || [],
+      }));
     }
-  }, [note]);
+  }, [note, initialTemplate]);
+
+  const handleSelectTemplate = (template: NoteTemplate) => {
+    setFormData(prev => ({
+      ...prev,
+      title: template.data.title || '',
+      description: template.data.description || '',
+      code: template.data.code || '',
+      tags: template.data.tags || [],
+    }));
+    toast({
+      title: 'Template appliqué',
+      description: `Le modèle "${template.name}" a été appliqué.`,
+    });
+  };
 
   const handleSubmit = useCallback((e?: React.FormEvent) => {
     e?.preventDefault();
@@ -192,9 +217,14 @@ export function NoteForm({ note, categories, existingTags = [], existingSubcateg
               <p className="text-xs text-muted-foreground">Ctrl+S pour sauvegarder • Échap pour annuler</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onCancel} className="rounded-xl hover:bg-destructive/10 hover:text-destructive">
-            <X className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {!note && (
+              <NoteTemplates onSelectTemplate={handleSelectTemplate} />
+            )}
+            <Button variant="ghost" size="icon" onClick={onCancel} className="rounded-xl hover:bg-destructive/10 hover:text-destructive">
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
 
         {/* Form */}
