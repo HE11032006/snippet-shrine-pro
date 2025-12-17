@@ -108,7 +108,7 @@ export function NoteForm({ note, categories, existingTags = [], existingSubcateg
         language: note.language,
         tags: note.tags,
       });
-    } else if (initialTemplate) {
+    } else if (initialTemplate?.data) {
       setFormData(prev => ({
         ...prev,
         title: initialTemplate.data.title || '',
@@ -120,6 +120,7 @@ export function NoteForm({ note, categories, existingTags = [], existingSubcateg
   }, [note, initialTemplate]);
 
   const handleSelectTemplate = (template: NoteTemplate) => {
+    if (!template?.data) return;
     setFormData(prev => ({
       ...prev,
       title: template.data.title || '',
