@@ -1,0 +1,35 @@
+{
+  "appId": "com.codenotes.app",
+  "productName": "Code Notes",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*"
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "public/android-chrome-512x512.png"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "installerIcon": "public/android-chrome-512x512.png",
+    "uninstallerIcon": "public/android-chrome-512x512.png",
+    "installerHeaderIcon": "public/android-chrome-512x512.png"
+  },
+  "mac": {
+    "target": ["dmg"],
+    "icon": "public/android-chrome-512x512.png"
+  },
+  "linux": {
+    "target": ["AppImage"],
+    "icon": "public/android-chrome-512x512.png"
+  }
+}
