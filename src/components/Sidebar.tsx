@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ExportImport } from '@/components/ExportImport';
 import { TagFilter } from '@/components/TagFilter';
+import { Statistics } from '@/components/Statistics';
 import { Note } from '@/types/note';
 
 interface SidebarProps {
@@ -254,10 +255,13 @@ export function Sidebar({
       {/* Footer with tools */}
       <div className="p-3 border-t border-sidebar-border space-y-2">
         {!collapsed && (
-          <div className="flex items-center justify-between">
-            <ExportImport notes={notes} onImport={onImport} />
-            <ThemeToggle />
-          </div>
+          <>
+            <Statistics notes={notes} />
+            <div className="flex items-center justify-between">
+              <ExportImport notes={notes} onImport={onImport} />
+              <ThemeToggle />
+            </div>
+          </>
         )}
         <Button
           variant="ghost"
