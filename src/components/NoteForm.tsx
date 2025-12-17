@@ -392,11 +392,11 @@ export function NoteForm({ note, categories, existingTags = [], existingSubcateg
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="Expliquez le concept, les cas d'utilisation... (supporte **gras**, *italique*, `code`, listes...)"
-                rows={5}
-                className="input-modern resize-none"
+                rows={10}
+                className="input-modern resize-y min-h-[200px]"
               />
             ) : (
-              <div className="min-h-[130px] p-4 rounded-xl border border-border bg-muted/30 prose-custom text-sm overflow-auto">
+              <div className="min-h-[200px] p-4 rounded-xl border border-border bg-muted/30 prose-custom text-sm overflow-auto">
                 {formData.description ? (
                   <ReactMarkdown>{formData.description}</ReactMarkdown>
                 ) : (

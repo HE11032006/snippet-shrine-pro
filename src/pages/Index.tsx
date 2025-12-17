@@ -8,6 +8,7 @@ import { SearchBar } from '@/components/SearchBar';
 import { NoteCard } from '@/components/NoteCard';
 import { NoteForm } from '@/components/NoteForm';
 import { SelectionBar } from '@/components/SelectionBar';
+import { AdvancedSearch, AdvancedSearchFilters, DEFAULT_FILTERS } from '@/components/AdvancedSearch';
 import { useTheme } from '@/hooks/useTheme';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { toast } from '@/hooks/use-toast';
@@ -19,6 +20,7 @@ const Index = () => {
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedSearchFilters>(DEFAULT_FILTERS);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(new Set());
@@ -30,6 +32,12 @@ const Index = () => {
 
   const categories = useMemo(() => getCategories(), [notes, getCategories]);
   const allTags = useMemo(() => getAllTags(), [notes, getAllTags]);
+  
+  // Get all unique languages
+  const allLanguages = useMemo(() => {
+    const langs = new Set(notes.map(note => note.language));
+    return Array.from(langs).sort();
+  }, [notes]);
   
   // Get subcategories for all categories (for the form)
   const allSubcategories = useMemo(() => {
@@ -60,20 +68,36 @@ const Index = () => {
       );
     }
 
-    // Filter by search query
+    // Filter by language (advanced filter)
+    if (advancedFilters.language !== 'all') {
+      result = result.filter(note => note.language === advancedFilters.language);
+    }
+
+    // Filter by date range (advanced filter)
+    if (advancedFilters.dateFrom) {
+      const fromDate = new Date(advancedFilters.dateFrom);
+      result = result.filter(note => new Date(note.createdAt) >= fromDate);
+    }
+    if (advancedFilters.dateTo) {
+      const toDate = new Date(advancedFilters.dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      result = result.filter(note => new Date(note.createdAt) <= toDate);
+    }
+
+    // Filter by search query with advanced scope
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(
-        note =>
-          note.title.toLowerCase().includes(query) ||
-          note.description.toLowerCase().includes(query) ||
-          note.code.toLowerCase().includes(query) ||
-          note.tags.some(tag => tag.toLowerCase().includes(query))
-      );
+      result = result.filter(note => {
+        const matchTitle = advancedFilters.searchInTitle && note.title.toLowerCase().includes(query);
+        const matchDescription = advancedFilters.searchInDescription && note.description.toLowerCase().includes(query);
+        const matchCode = advancedFilters.searchInCode && note.code.toLowerCase().includes(query);
+        const matchTags = note.tags.some(tag => tag.toLowerCase().includes(query));
+        return matchTitle || matchDescription || matchCode || matchTags;
+      });
     }
 
     return result;
-  }, [notes, selectedCategory, selectedSubcategory, selectedTags, searchQuery]);
+  }, [notes, selectedCategory, selectedSubcategory, selectedTags, searchQuery, advancedFilters]);
 
   const handleToggleTag = useCallback((tag: string) => {
     setSelectedTags(prev => 
@@ -256,7 +280,16 @@ const Index = () => {
               {filteredNotes.length} note{filteredNotes.length !== 1 ? 's' : ''} trouvée{filteredNotes.length !== 1 ? 's' : ''}
               <span className="text-xs ml-2 opacity-60">(Ctrl+F pour rechercher)</span>
             </p>
-            <SearchBar ref={searchInputRef} value={searchQuery} onChange={setSearchQuery} />
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <SearchBar ref={searchInputRef} value={searchQuery} onChange={setSearchQuery} />
+              </div>
+              <AdvancedSearch 
+                filters={advancedFilters} 
+                onChange={setAdvancedFilters} 
+                languages={allLanguages} 
+              />
+            </div>
           </header>
 
           {/* Notes Grid */}
