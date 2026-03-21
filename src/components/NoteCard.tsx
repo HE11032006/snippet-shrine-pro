@@ -1,5 +1,5 @@
-import { Edit3, Trash2, Copy, Check, Files, Sparkles, Share2, Wrench, Link2, ArrowUpRight } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { Edit3, Trash2, Copy, Check, Files, Sparkles, Share2, Wrench, Link2, ArrowUpRight, ChevronRight, ExternalLink, Star, Clock, Tag, FileCode2, MoreVertical, Maximize2, Download, Image as ImageIcon } from 'lucide-react';
+import { useState, useMemo, useRef } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import ReactMarkdown from 'react-markdown';
@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { parseNoteLinks } from '@/components/NoteLink';
 import { LanguageIcon } from './LanguageIcon';
 import { cn } from '@/lib/utils';
+import { toPng } from 'html-to-image';
 
 interface NoteCardProps {
   note: Note;
@@ -30,6 +31,39 @@ interface NoteCardProps {
 
 export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onToggleSelect, allNotes = [], onNoteClick, settings }: NoteCardProps) {
   const [copied, setCopied] = useState(false);
+  const codeRef = useRef<HTMLDivElement>(null);
+
+  const handleExportImage = async () => {
+    if (!codeRef.current) return;
+    
+    try {
+      const dataUrl = await toPng(codeRef.current, {
+        cacheBust: true,
+        backgroundColor: '#0a0a0c', // Match theme background
+        style: {
+          padding: '40px',
+          borderRadius: '16px',
+        }
+      });
+      
+      const link = document.createElement('a');
+      link.download = `shrine-${note.title.toLowerCase().replace(/\s+/g, '-')}.png`;
+      link.href = dataUrl;
+      link.click();
+      
+      toast({
+        title: "Export réussi",
+        description: "L'image a été téléchargée.",
+      });
+    } catch (err) {
+      console.error(err);
+      toast({
+        variant: "destructive",
+        title: "Erreur d'export",
+        description: "Impossible de générer l'image.",
+      });
+    }
+  };
 
   // Calculate backlinks (notes that link to this note)
   const backlinks = useMemo(() => {
@@ -156,6 +190,19 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onTo
                 <Button
                   variant="ghost"
                   size="icon"
+                  onClick={handleExportImage}
+                  className="h-9 w-9 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10"
+                >
+                  <ImageIcon className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Exporter en image</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => onEdit(note)}
                   className="h-9 w-9 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10"
                 >
@@ -190,7 +237,7 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onTo
 
       {/* Code */}
       {hasCode && (
-        <div className="relative group/code">
+        <div ref={codeRef} className="relative group/code bg-[#0d0d0f] rounded-xl overflow-hidden border border-border/40 my-4 mx-5 shadow-2xl">
           {/* Floating Action Bar - Discrete */}
           <div className="absolute top-3 right-3 z-20 flex gap-1.5 opacity-0 group-hover/code:opacity-100 transition-all duration-200 translate-y-1 group-hover/code:translate-y-0">
             <Tooltip>
