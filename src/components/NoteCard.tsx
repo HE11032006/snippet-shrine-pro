@@ -1,4 +1,4 @@
-import { Edit3, Trash2, Copy, Check, Files } from 'lucide-react';
+import { Edit3, Trash2, Copy, Check, Files, Sparkles, Share2, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -76,7 +76,7 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onTo
   };
 
   return (
-    <article className={`glass-panel rounded-2xl overflow-hidden animate-slide-up card-hover relative ${isSelected ? 'ring-2 ring-primary' : ''}`}>
+    <article className={`glass-panel rounded-2xl overflow-hidden animate-slide-up card-hover relative group/card ${isSelected ? 'ring-2 ring-primary' : ''}`}>
       {/* Selection Checkbox */}
       {onToggleSelect && (
         <div className="absolute top-4 left-4 z-10">
@@ -164,22 +164,73 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onTo
 
       {/* Code */}
       {hasCode && (
-        <div className="relative">
-          <button
-            onClick={handleCopy}
-            className="absolute top-4 right-4 z-10 p-2.5 rounded-xl bg-secondary/90 hover:bg-secondary text-muted-foreground hover:text-foreground transition-all shadow-lg hover:scale-105"
-            title="Copier le code"
-          >
-            {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
-          </button>
+        <div className="relative group/code">
+          {/* Floating Action Bar - Discrete */}
+          <div className="absolute top-3 right-3 z-20 flex gap-1.5 opacity-0 group-hover/code:opacity-100 transition-all duration-200 translate-y-1 group-hover/code:translate-y-0">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleCopy}
+                  className="p-2 rounded-lg bg-background/80 backdrop-blur-md border border-border shadow-sm text-muted-foreground hover:text-primary hover:border-primary/30 transition-all"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Copier Code</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="p-2 rounded-lg bg-background/80 backdrop-blur-md border border-border shadow-sm text-muted-foreground hover:text-primary hover:border-primary/30 transition-all"
+                  onClick={() => toast({ title: "IA Magik", description: "Analyse du code en cours... (Simulé)" })}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Expliquer (IA)</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="p-2 rounded-lg bg-background/80 backdrop-blur-md border border-border shadow-sm text-muted-foreground hover:text-primary hover:border-primary/30 transition-all"
+                  onClick={() => toast({ title: "Formatage", description: "Auto-formatage appliqué (Simulé)" })}
+                >
+                  <Wrench className="w-3.5 h-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Formatter</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="p-2 rounded-lg bg-background/80 backdrop-blur-md border border-border shadow-sm text-muted-foreground hover:text-primary hover:border-primary/30 transition-all"
+                  onClick={() => toast({ title: "Partage", description: "Lien de partage créé." })}
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Partager</TooltipContent>
+            </Tooltip>
+          </div>
+
           <SyntaxHighlighter
             language={note.language}
             style={oneDark}
             customStyle={{
               margin: 0,
               borderRadius: 0,
-              fontSize: '0.8125rem',
-              padding: '1.25rem',
+              fontSize: '0.9rem',
+              lineHeight: '1.6',
+              padding: '1.5rem',
+              background: 'transparent',
+            }}
+            codeTagProps={{
+              style: {
+                fontFamily: '"JetBrains Mono", monospace',
+              }
             }}
             showLineNumbers
           >

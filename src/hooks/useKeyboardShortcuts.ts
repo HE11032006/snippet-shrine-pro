@@ -6,6 +6,7 @@ interface ShortcutHandlers {
   onCancel?: () => void;
   onSearch?: () => void;
   onDuplicate?: () => void;
+  onPalette?: () => void;
 }
 
 export function useKeyboardShortcuts(handlers: ShortcutHandlers, enabled = true) {
@@ -47,10 +48,10 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers, enabled = true)
       return;
     }
 
-    // Ctrl/Cmd + D - Duplicate
-    if (isCtrlOrMeta && e.key === 'd') {
+    // Ctrl/Cmd + Shift + J - Command Palette
+    if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'j') {
       e.preventDefault();
-      handlers.onDuplicate?.();
+      handlers.onPalette?.();
       return;
     }
   }, [handlers, enabled]);

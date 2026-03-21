@@ -63,6 +63,19 @@ const LANGUAGES = [
 
 const DEFAULT_CATEGORIES = ['Python', 'JavaScript', 'TypeScript', 'CSS', 'HTML', 'SQL', 'Bash', 'Autre'];
 
+const DRAFT_STORAGE_KEY = 'snip-shrine-new-note-draft';
+
+const detectLanguage = (code: string): string | null => {
+  const c = code.trim();
+  if (c.includes('def ') || (c.includes('import ') && !c.includes('from "'))) return 'python';
+  if (c.includes('interface ') || c.includes('type ') || c.includes('readonly ')) return 'typescript';
+  if (c.includes('function ') || c.includes('const ') || c.includes('let ') || c.includes('=>')) return 'javascript';
+  if (c.startsWith('<') || c.includes('</div>') || c.includes('</span>')) return 'html';
+  if (c.includes('{') && (c.includes(': ') || c.includes('margin:'))) return 'css';
+  if (c.toUpperCase().includes('SELECT ') && c.toUpperCase().includes('FROM ')) return 'sql';
+  return null;
+};
+
 export function NoteForm({ note, categories, existingTags = [], existingSubcategories = {}, onSave, onCancel, onNewNote, initialTemplate }: NoteFormProps) {
   const [formData, setFormData] = useState<NoteFormData>({
     category: '',
@@ -116,8 +129,30 @@ export function NoteForm({ note, categories, existingTags = [], existingSubcateg
         code: initialTemplate.data.code || '',
         tags: initialTemplate.data.tags || [],
       }));
+    } else if (!note) {
+      // Load draft for new notes
+      const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (savedDraft) {
+        try {
+          const draft = JSON.parse(savedDraft);
+          setFormData(prev => ({ ...prev, ...draft }));
+          toast({
+            title: 'Brouillon restauré',
+            description: 'Votre travail non sauvegardé a été récupéré.',
+          });
+        } catch (e) {
+          console.error('Failed to parse draft', e);
+        }
+      }
     }
   }, [note, initialTemplate]);
+
+  // Auto-save draft
+  useEffect(() => {
+    if (!note && (formData.title || formData.description || formData.code)) {
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(formData));
+    }
+  }, [formData, note]);
 
   const handleSelectTemplate = (template: NoteTemplate) => {
     if (!template?.data) return;
@@ -147,6 +182,7 @@ export function NoteForm({ note, categories, existingTags = [], existingSubcateg
     }
 
     onSave(formData);
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
     toast({
       title: note ? 'Note modifiée' : 'Note créée',
       description: note ? 'La note a été modifiée avec succès.' : 'La note a été créée avec succès.',
@@ -406,12 +442,24 @@ export function NoteForm({ note, categories, existingTags = [], existingSubcateg
             )}
           </div>
 
-          {/* Code (optionnel) */}
           <div className="space-y-2">
             <Label className="text-sm font-semibold">Code <span className="text-muted-foreground font-normal text-xs">(optionnel)</span></Label>
             <Textarea
               value={formData.code}
               onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
+              onPaste={(e) => {
+                const pastedText = e.clipboardData.getData('text');
+                if (pastedText && (!formData.code || formData.code.length < 10)) {
+                  const detected = detectLanguage(pastedText);
+                  if (detected) {
+                    setFormData(prev => ({ ...prev, language: detected }));
+                    toast({
+                      title: 'Langage détecté',
+                      description: `Le langage a été réglé sur ${detected.toUpperCase()}.`,
+                    });
+                  }
+                }
+              }}
               placeholder="Collez votre code ici..."
               rows={8}
               className="input-modern font-mono text-sm resize-none"

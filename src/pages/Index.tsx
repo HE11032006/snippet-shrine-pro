@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { FileCode2 } from 'lucide-react';
 import { useNotes } from '@/hooks/useNotes';
 import { Note, NoteFormData } from '@/types/note';
@@ -9,6 +9,7 @@ import { NoteCard } from '@/components/NoteCard';
 import { NoteForm } from '@/components/NoteForm';
 import { SelectionBar } from '@/components/SelectionBar';
 import { AdvancedSearch, AdvancedSearchFilters, DEFAULT_FILTERS } from '@/components/AdvancedSearch';
+import { CommandPalette } from '@/components/CommandPalette';
 import { useTheme } from '@/hooks/useTheme';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { toast } from '@/hooks/use-toast';
@@ -25,10 +26,11 @@ const Index = () => {
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(new Set());
   const [initialTemplate, setInitialTemplate] = useState<NoteTemplate | null>(null);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   
   // Initialize theme
-  useTheme();
+  const { theme, toggleTheme } = useTheme();
 
   const categories = useMemo(() => getCategories(), [notes, getCategories]);
   const allTags = useMemo(() => getAllTags(), [notes, getAllTags]);
@@ -140,6 +142,24 @@ const Index = () => {
     setInitialTemplate(null);
   }, []);
 
+  // Listen for Electron IPC events
+  useEffect(() => {
+    if (window.require) {
+      try {
+        const { ipcRenderer } = window.require('electron');
+        const handleTriggerNewNote = () => {
+          handleNewNote();
+        };
+        ipcRenderer.on('trigger-new-note', handleTriggerNewNote);
+        return () => {
+          ipcRenderer.removeListener('trigger-new-note', handleTriggerNewNote);
+        };
+      } catch (e) {
+        console.error('Electron IPC not available', e);
+      }
+    }
+  }, [handleNewNote]);
+
   const handleSelectCategory = useCallback((category: string | null, subcategory?: string | null) => {
     setSelectedCategory(category);
     setSelectedSubcategory(subcategory ?? null);
@@ -228,6 +248,7 @@ const Index = () => {
     onNewNote: () => handleNewNote(),
     onSearch: handleFocusSearch,
     onCancel: handleCancelForm,
+    onPalette: () => setIsPaletteOpen(prev => !prev),
   }, !isFormOpen);
 
   if (!isLoaded) {
@@ -359,6 +380,16 @@ const Index = () => {
           initialTemplate={initialTemplate}
         />
       )}
+
+      {/* Command Palette */}
+      <CommandPalette
+        isOpen={isPaletteOpen}
+        onClose={() => setIsPaletteOpen(false)}
+        notes={notes}
+        onSelectNote={handleNoteClick}
+        onNewNote={handleNewNote}
+        onToggleTheme={toggleTheme}
+      />
     </div>
   );
 };
