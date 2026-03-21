@@ -1,19 +1,19 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { FileCode2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useNotes } from '@/hooks/useNotes';
 import { Note, NoteFormData } from '@/types/note';
 import { Sidebar } from '@/components/Sidebar';
-import { MobileSidebar } from '@/components/MobileSidebar';
-import { SearchBar } from '@/components/SearchBar';
-import { NoteCard } from '@/components/NoteCard';
 import { NoteForm } from '@/components/NoteForm';
 import { SelectionBar } from '@/components/SelectionBar';
-import { AdvancedSearch, AdvancedSearchFilters, DEFAULT_FILTERS } from '@/components/AdvancedSearch';
+import { AdvancedSearchFilters, DEFAULT_FILTERS } from '@/components/AdvancedSearch';
 import { CommandPalette } from '@/components/CommandPalette';
+import { NoteList } from '@/components/NoteList';
+import { NoteDetail } from '@/components/NoteDetail';
 import { useTheme } from '@/hooks/useTheme';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { toast } from '@/hooks/use-toast';
 import { NoteTemplate } from '@/components/NoteTemplates';
+import { Button } from '@/components/ui/button';
 
 const Index = () => {
   const { notes, isLoaded, addNote, updateNote, deleteNote, getCategories, getSubcategories, getAllTags, duplicateNote, importNotes } = useNotes();
@@ -27,6 +27,9 @@ const Index = () => {
   const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(new Set());
   const [initialTemplate, setInitialTemplate] = useState<NoteTemplate | null>(null);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [isCompact, setIsCompact] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   
   // Initialize theme
@@ -129,7 +132,8 @@ const Index = () => {
     if (editingNote) {
       updateNote(editingNote.id, data);
     } else {
-      addNote(data);
+      const newNote = addNote(data);
+      if (newNote) setSelectedNoteId(newNote.id);
     }
     setIsFormOpen(false);
     setEditingNote(null);
@@ -165,15 +169,24 @@ const Index = () => {
     setSelectedSubcategory(subcategory ?? null);
   }, []);
 
-  const handleDuplicateNote = useCallback((id: string) => {
-    const newNote = duplicateNote(id);
+  const handleDuplicateNote = useCallback((note: Note) => {
+    const newNote = duplicateNote(note.id);
     if (newNote) {
+      setSelectedNoteId(newNote.id);
       toast({
         title: 'Note dupliquée',
         description: `"${newNote.title}" a été créée.`,
       });
     }
   }, [duplicateNote]);
+
+  const handleDeleteNote = useCallback((id: string) => {
+    if (confirm('Supprimer ce snippet ?')) {
+      deleteNote(id);
+      setSelectedNoteId(null);
+      toast({ title: 'Snippet supprimé' });
+    }
+  }, [deleteNote]);
 
   const handleFocusSearch = useCallback(() => {
     searchInputRef.current?.focus();
@@ -208,10 +221,11 @@ const Index = () => {
         description: `${selectedNoteIds.size} note(s) supprimée(s).`,
       });
       setSelectedNoteIds(new Set());
+      setSelectedNoteId(null);
     }
   }, [selectedNoteIds, deleteNote]);
 
-  const handleExportSelected = useCallback(() => {
+  const handleBatchExport = useCallback(() => {
     const selectedNotes = notes.filter(n => selectedNoteIds.has(n.id));
     const dataStr = JSON.stringify(selectedNotes, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
@@ -229,19 +243,12 @@ const Index = () => {
   }, [selectedNoteIds, notes]);
 
   const handleNoteClick = useCallback((noteId: string) => {
-    const targetNote = notes.find(n => n.id === noteId);
-    if (targetNote) {
-      // Scroll to note and highlight it
-      const element = document.getElementById(`note-${noteId}`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        element.classList.add('ring-2', 'ring-primary');
-        setTimeout(() => {
-          element.classList.remove('ring-2', 'ring-primary');
-        }, 2000);
-      }
+    if (isSelectionMode) {
+      handleToggleSelect(noteId);
+    } else {
+      setSelectedNoteId(noteId);
     }
-  }, [notes]);
+  }, [isSelectionMode, handleToggleSelect]);
 
   // Global keyboard shortcuts
   useKeyboardShortcuts({
@@ -253,119 +260,84 @@ const Index = () => {
 
   if (!isLoaded) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="animate-pulse text-muted-foreground">Chargement...</div>
+      <div className="flex items-center justify-center min-h-screen bg-background text-indigo-500 font-medium">
+        <div className="animate-pulse">Chargement de vos notes...</div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:flex">
-        <Sidebar
-          categories={categories}
-          selectedCategory={selectedCategory}
-          selectedSubcategory={selectedSubcategory}
-          onSelectCategory={handleSelectCategory}
-          onNewNote={handleNewNote}
-          notesCount={notes.length}
-          notes={notes}
-          onImport={importNotes}
-          tags={allTags}
-          selectedTags={selectedTags}
-          onToggleTag={handleToggleTag}
-          onClearTags={handleClearTags}
+    <div className="flex h-screen w-full bg-background overflow-hidden">
+      {/* Column 1: Sidebar */}
+      <Sidebar
+        categories={categories}
+        selectedCategory={selectedCategory}
+        selectedSubcategory={selectedSubcategory}
+        onSelectCategory={handleSelectCategory}
+        onNewNote={handleNewNote}
+        notesCount={notes.length}
+        notes={notes}
+        onImport={importNotes}
+        tags={allTags}
+        selectedTags={selectedTags}
+        onToggleTag={handleToggleTag}
+        onClearTags={handleClearTags}
+      />
+
+      {/* Column 2: Note List (Master) */}
+      <div className="w-[350px] lg:w-[400px] flex-shrink-0 flex flex-col border-r border-border/50">
+        <NoteList
+          notes={filteredNotes}
+          selectedNoteId={selectedNoteId}
+          onSelectNote={handleNoteClick}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          advancedFilters={advancedFilters}
+          onFiltersChange={setAdvancedFilters}
+          languages={allLanguages}
+          selectedNoteIds={selectedNoteIds}
+          onToggleSelect={handleToggleSelect}
         />
       </div>
 
-      {/* Mobile Sidebar */}
-      <MobileSidebar
-        categories={categories}
-        selectedCategory={selectedCategory}
-        onSelectCategory={(cat) => handleSelectCategory(cat, null)}
-        onNewNote={handleNewNote}
-      />
+      {/* Column 3: Note Detail (Detail) */}
+      <main className="flex-1 overflow-hidden relative bg-muted/5">
+        <NoteDetail
+          note={notes.find(n => n.id === selectedNoteId) || null}
+          onEdit={handleEditNote}
+          onDelete={handleDeleteNote}
+          onDuplicate={handleDuplicateNote}
+        />
 
-      {/* Main Content */}
-      <main className="flex-1 min-w-0 pt-16 lg:pt-0">
-        <div className="max-w-4xl mx-auto p-4 lg:p-8">
-          {/* Header */}
-          <header className="mb-8">
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-              {selectedSubcategory 
-                ? `${selectedCategory} › ${selectedSubcategory}`
-                : selectedCategory || 'Toutes les notes'}
-            </h1>
-            <p className="text-muted-foreground mb-6">
-              {filteredNotes.length} note{filteredNotes.length !== 1 ? 's' : ''} trouvée{filteredNotes.length !== 1 ? 's' : ''}
-              <span className="text-xs ml-2 opacity-60">(Ctrl+F pour rechercher)</span>
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1">
-                <SearchBar ref={searchInputRef} value={searchQuery} onChange={setSearchQuery} />
-              </div>
-              <AdvancedSearch 
-                filters={advancedFilters} 
-                onChange={setAdvancedFilters} 
-                languages={allLanguages} 
-              />
-            </div>
-          </header>
+        {/* Global Floating Action Button */}
+        {!isSelectionMode && (
+          <div className="absolute bottom-8 right-8 z-30">
+            <Button
+              size="lg"
+              className="rounded-full shadow-2xl px-6 py-6 h-14 bg-primary hover:bg-primary/90 transition-all hover:scale-105 active:scale-95 group font-bold"
+              onClick={() => handleNewNote()}
+            >
+              <Plus className="w-6 h-6 mr-2 transition-transform group-hover:rotate-90" />
+              Nouveau Snippet
+              <kbd className="ml-3 hidden sm:inline-flex h-5 items-center gap-1 rounded bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium opacity-100">
+                <span className="text-xs">Ctrl+N</span>
+              </kbd>
+            </Button>
+          </div>
+        )}
 
-          {/* Notes Grid */}
-          {filteredNotes.length > 0 ? (
-            <div className="space-y-6">
-              {filteredNotes.map(note => (
-                <div key={note.id} id={`note-${note.id}`}>
-                  <NoteCard
-                    note={note}
-                    onEdit={handleEditNote}
-                    onDelete={deleteNote}
-                    onDuplicate={handleDuplicateNote}
-                    isSelected={selectedNoteIds.has(note.id)}
-                    onToggleSelect={handleToggleSelect}
-                    allNotes={notes}
-                    onNoteClick={handleNoteClick}
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="p-4 rounded-full bg-muted mb-4">
-                <FileCode2 className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-medium text-foreground mb-2">
-                Aucune note trouvée
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                {searchQuery
-                  ? "Essayez avec d'autres termes de recherche"
-                  : 'Créez votre première note de code'}
-              </p>
-              {!searchQuery && (
-                <button
-                  onClick={() => handleNewNote()}
-                  className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity"
-                >
-                  Créer une note
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+        {/* Selection Bar */}
+        {isSelectionMode && selectedNoteIds.size > 0 && (
+          <SelectionBar
+            selectedCount={selectedNoteIds.size}
+            totalCount={filteredNotes.length}
+            onSelectAll={handleSelectAll}
+            onClearSelection={handleClearSelection}
+            onDeleteSelected={handleDeleteSelected}
+            onExportSelected={handleBatchExport}
+          />
+        )}
       </main>
-
-      {/* Selection Bar */}
-      <SelectionBar
-        selectedCount={selectedNoteIds.size}
-        totalCount={filteredNotes.length}
-        onSelectAll={handleSelectAll}
-        onClearSelection={handleClearSelection}
-        onDeleteSelected={handleDeleteSelected}
-        onExportSelected={handleExportSelected}
-      />
 
       {/* Note Form Modal */}
       {isFormOpen && (
