@@ -1,7 +1,7 @@
 import React from 'react';
 import { SearchBar } from './SearchBar';
 import { AdvancedSearch, AdvancedSearchFilters } from './AdvancedSearch';
-import { FileCode2, Clock, Tag } from 'lucide-react';
+import { FileCode2, Clock, Tag, Star } from 'lucide-react';
 import { Note } from '@/types/note';
 
 interface NoteListProps {
@@ -58,9 +58,14 @@ export function NoteList({
                 }`}
               >
                 <div className="flex justify-between items-start mb-1">
-                  <h4 className={`font-bold truncate text-sm flex-1 ${selectedNoteId === note.id ? 'text-primary' : 'text-foreground'}`}>
-                    {note.title || 'Sans titre'}
-                  </h4>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <h4 className={`font-bold truncate text-sm ${selectedNoteId === note.id ? 'text-primary' : 'text-foreground'}`}>
+                      {note.title || 'Sans titre'}
+                    </h4>
+                    {note.isStarred && (
+                      <Star className="w-3 h-3 fill-amber-500 text-amber-500 shrink-0" />
+                    )}
+                  </div>
                   <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2 opacity-60">
                     {new Date(note.updatedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                   </span>

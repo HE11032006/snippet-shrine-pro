@@ -7,6 +7,7 @@ export interface Note {
   code: string;
   language: string;
   tags: string[];
+  isStarred?: boolean;
   createdAt: string;
   updatedAt: string;
 }

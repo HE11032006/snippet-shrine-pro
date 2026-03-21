@@ -172,6 +172,16 @@ export function useNotes() {
     });
   }, []);
 
+  const toggleStar = useCallback((id: string) => {
+    setNotes(prev =>
+      prev.map(note =>
+        note.id === id
+          ? { ...note, isStarred: !note.isStarred, updatedAt: new Date().toISOString() }
+          : note
+      )
+    );
+  }, []);
+
   return {
     notes,
     isLoaded,
@@ -183,5 +193,6 @@ export function useNotes() {
     getAllTags,
     duplicateNote,
     importNotes,
+    toggleStar,
   };
 }

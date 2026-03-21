@@ -16,7 +16,7 @@ import { NoteTemplate } from '@/components/NoteTemplates';
 import { Button } from '@/components/ui/button';
 
 const Index = () => {
-  const { notes, isLoaded, addNote, updateNote, deleteNote, getCategories, getSubcategories, getAllTags, duplicateNote, importNotes } = useNotes();
+  const { notes, isLoaded, addNote, updateNote, deleteNote, getCategories, getSubcategories, getAllTags, duplicateNote, importNotes, toggleStar } = useNotes();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -56,9 +56,19 @@ const Index = () => {
   const filteredNotes = useMemo(() => {
     let result = notes;
 
-    // Filter by category
+    // Filter by category or smart folder
     if (selectedCategory) {
-      result = result.filter(note => note.category === selectedCategory);
+      if (selectedCategory === '__starred__') {
+        result = result.filter(note => note.isStarred);
+      } else if (selectedCategory === '__recent__') {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        result = result.filter(note => new Date(note.updatedAt) >= weekAgo);
+      } else if (selectedCategory === '__untagged__') {
+        result = result.filter(note => note.tags.length === 0);
+      } else {
+        result = result.filter(note => note.category === selectedCategory);
+      }
     }
 
     // Filter by subcategory
@@ -307,6 +317,7 @@ const Index = () => {
           onEdit={handleEditNote}
           onDelete={handleDeleteNote}
           onDuplicate={handleDuplicateNote}
+          onToggleStar={toggleStar}
         />
 
         {/* Global Floating Action Button */}

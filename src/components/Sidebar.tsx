@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Code2, FolderOpen, Hash, Plus, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { Code2, FolderOpen, Hash, Plus, ChevronLeft, ChevronRight, ChevronDown, Star, Clock, Tag, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -131,6 +131,64 @@ export function Sidebar({
         )}
       </div>
 
+      {/* Smart Folders / Navigation */}
+      <div className="px-3 space-y-4">
+        {!collapsed && (
+          <div className="mb-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Navigation
+          </div>
+        )}
+        <nav className="space-y-1">
+          {/* Toutes les notes */}
+          <button
+            onClick={() => handleCategoryClick(null)}
+            className={cn(
+              collapsed ? 'w-full flex items-center justify-center p-2.5 rounded-lg' : 'sidebar-item w-full',
+              selectedCategory === null && !selectedSubcategory && 'active'
+            )}
+          >
+            <FolderOpen className={cn(collapsed ? "w-5 h-5" : "w-4 h-4")} />
+            {!collapsed && <span className="flex-1 text-left">Toutes les notes</span>}
+          </button>
+
+          {/* Favoris */}
+          <button
+            onClick={() => onSelectCategory('__starred__', null)}
+            className={cn(
+              collapsed ? 'w-full flex items-center justify-center p-2.5 rounded-lg' : 'sidebar-item w-full text-amber-500 hover:text-amber-600',
+              selectedCategory === '__starred__' && 'active bg-amber-500/10 text-amber-600'
+            )}
+          >
+            <Star className={cn(collapsed ? "w-5 h-5" : "w-4 h-4", selectedCategory === '__starred__' && "fill-current")} />
+            {!collapsed && <span className="flex-1 text-left">Favoris</span>}
+          </button>
+
+          {/* Récents */}
+          <button
+            onClick={() => onSelectCategory('__recent__', null)}
+            className={cn(
+              collapsed ? 'w-full flex items-center justify-center p-2.5 rounded-lg' : 'sidebar-item w-full',
+              selectedCategory === '__recent__' && 'active'
+            )}
+          >
+            <Clock className={cn(collapsed ? "w-5 h-5" : "w-4 h-4")} />
+            {!collapsed && <span className="flex-1 text-left">Récents</span>}
+          </button>
+
+          {/* Sans étiquettes */}
+          <button
+            onClick={() => onSelectCategory('__untagged__', null)}
+            className={cn(
+              collapsed ? 'w-full flex items-center justify-center p-2.5 rounded-lg' : 'sidebar-item w-full',
+              selectedCategory === '__untagged__' && 'active'
+            )}
+          >
+            <Inbox className={cn(collapsed ? "w-5 h-5" : "w-4 h-4")} />
+            {!collapsed && <span className="flex-1 text-left">Sans étiquettes</span>}
+          </button>
+        </nav>
+      </div>
+
       {/* Categories */}
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
         {!collapsed && (
@@ -140,35 +198,6 @@ export function Sidebar({
         )}
         
         <nav className="space-y-1">
-          {collapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => handleCategoryClick(null)}
-                  className={cn(
-                    'w-full flex items-center justify-center p-2.5 rounded-lg transition-all duration-200',
-                    selectedCategory === null 
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
-                  )}
-                >
-                  <FolderOpen className="w-5 h-5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Toutes les notes</TooltipContent>
-            </Tooltip>
-          ) : (
-            <button
-              onClick={() => handleCategoryClick(null)}
-              className={cn(
-                'sidebar-item w-full',
-                selectedCategory === null && !selectedSubcategory && 'active'
-              )}
-            >
-              <FolderOpen className="w-4 h-4" />
-              Toutes les notes
-            </button>
-          )}
 
           {categories.map(category => {
             const subcategories = subcategoriesByCategory[category] || [];

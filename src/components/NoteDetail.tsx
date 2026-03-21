@@ -1,7 +1,7 @@
 import React from 'react';
 import { Note } from '@/types/note';
 import { NoteCard } from './NoteCard';
-import { FileText, Edit3, Trash2, ArrowLeft } from 'lucide-react';
+import { FileText, Edit3, Trash2, ArrowLeft, Star } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface NoteDetailProps {
@@ -9,6 +9,7 @@ interface NoteDetailProps {
   onEdit: (note: Note) => void;
   onDelete: (id: string) => void;
   onDuplicate: (note: Note) => void;
+  onToggleStar: (id: string) => void;
   onBack?: () => void; // for mobile/compact views
 }
 
@@ -17,6 +18,7 @@ export function NoteDetail({
   onEdit,
   onDelete,
   onDuplicate,
+  onToggleStar,
   onBack,
 }: NoteDetailProps) {
   if (!note) {
@@ -44,6 +46,15 @@ export function NoteDetail({
             </Button>
           )}
           <div className="flex gap-2 ml-auto">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onToggleStar(note.id)}
+              className={note.isStarred ? 'text-amber-500 border-amber-500/30 bg-amber-500/5' : ''}
+            >
+              <Star className={`w-4 h-4 mr-2 ${note.isStarred ? 'fill-current' : ''}`} />
+              {note.isStarred ? 'Favori' : 'Marquer favori'}
+            </Button>
             <Button variant="outline" size="sm" onClick={() => onEdit(note)} className="hover:bg-primary/10 hover:text-primary border-primary/20">
               <Edit3 className="w-4 h-4 mr-2" /> Éditer
             </Button>
