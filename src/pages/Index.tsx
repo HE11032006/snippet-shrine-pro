@@ -18,7 +18,8 @@ import { SettingsDialog } from '@/components/SettingsDialog';
 import { 
   PanelGroup, 
   Panel, 
-  PanelResizeHandle 
+  PanelResizeHandle,
+  ImperativePanelHandle
 } from 'react-resizable-panels';
 
 const Index = () => {
@@ -43,7 +44,10 @@ const Index = () => {
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isZenMode, setIsZenMode] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const sidebarPanelRef = useRef<ImperativePanelHandle>(null);
   
   // Initialize theme
   const { toggleTheme } = useTheme();
@@ -291,6 +295,18 @@ const Index = () => {
     }
   }, [notes, updateNote]);
 
+  const handleToggleSidebar = () => {
+    const currentlyCollapsed = isSidebarCollapsed;
+    setIsSidebarCollapsed(!currentlyCollapsed);
+    if (sidebarPanelRef.current) {
+      if (currentlyCollapsed) {
+        sidebarPanelRef.current.expand();
+      } else {
+        sidebarPanelRef.current.collapse();
+      }
+    }
+  };
+
   // Global keyboard shortcuts
   useKeyboardShortcuts({
     onNewNote: () => handleNewNote(),
@@ -314,7 +330,17 @@ const Index = () => {
         {/* Column 1: Sidebar */}
         {!isZenMode && (
           <>
-            <Panel defaultSize={20} minSize={15} maxSize={30} className="h-full">
+            <Panel 
+              ref={sidebarPanelRef}
+              defaultSize={20} 
+              minSize={15} 
+              maxSize={30} 
+              collapsible={true}
+              collapsedSize={4}
+              onCollapse={() => setIsSidebarCollapsed(true)}
+              onExpand={() => setIsSidebarCollapsed(false)}
+              className="h-full"
+            >
               <Sidebar
                 categories={categories}
                 selectedCategory={selectedCategory}
@@ -333,6 +359,8 @@ const Index = () => {
                 onOpenSettings={() => setIsSettingsOpen(true)}
                 onToggleZen={() => setIsZenMode(prev => !prev)}
                 onMoveNoteToCategory={handleMoveNoteToCategory}
+                collapsed={isSidebarCollapsed}
+                onToggleCollapse={handleToggleSidebar}
               />
             </Panel>
             <PanelResizeHandle className="w-1 bg-border/20 hover:bg-primary/30 transition-colors cursor-col-resize" />
@@ -343,7 +371,7 @@ const Index = () => {
         {!isZenMode && (
           <>
             <Panel defaultSize={30} minSize={20} maxSize={45} className="h-full">
-              <div className="h-full flex flex-col border-r border-border/50">
+              <div className="h-full flex flex-col border-r border-border/50 relative">
                 <NoteList
                   notes={filteredNotes}
                   selectedNoteId={selectedNoteId}
@@ -360,6 +388,20 @@ const Index = () => {
                   allTags={allTags}
                   settings={settings}
                 />
+                
+                {/* Selection Bar inside the column to follow its width */}
+                {isSelectionMode && selectedNoteIds.size > 0 && (
+                  <div className="absolute bottom-4 left-4 right-4 z-40">
+                    <SelectionBar
+                      selectedCount={selectedNoteIds.size}
+                      totalCount={filteredNotes.length}
+                      onSelectAll={handleSelectAll}
+                      onClearSelection={handleClearSelection}
+                      onDeleteSelected={handleDeleteSelected}
+                      onExportSelected={handleBatchExport}
+                    />
+                  </div>
+                )}
               </div>
             </Panel>
             <PanelResizeHandle className="w-1 bg-border/20 hover:bg-primary/30 transition-colors cursor-col-resize" />
@@ -414,18 +456,6 @@ const Index = () => {
             </kbd>
           </Button>
         </div>
-      )}
-
-      {/* Selection Bar */}
-      {isSelectionMode && selectedNoteIds.size > 0 && (
-        <SelectionBar
-          selectedCount={selectedNoteIds.size}
-          totalCount={filteredNotes.length}
-          onSelectAll={handleSelectAll}
-          onClearSelection={handleClearSelection}
-          onDeleteSelected={handleDeleteSelected}
-          onExportSelected={handleBatchExport}
-        />
       )}
 
       {/* Note Form Modal */}
