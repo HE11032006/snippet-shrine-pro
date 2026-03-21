@@ -3,6 +3,7 @@ import { SearchBar } from './SearchBar';
 import { AdvancedSearch, AdvancedSearchFilters } from './AdvancedSearch';
 import { FileCode2, Clock, Tag, Star } from 'lucide-react';
 import { Note } from '@/types/note';
+import { cn } from '@/lib/utils';
 
 interface NoteListProps {
   notes: Note[];
@@ -15,6 +16,7 @@ interface NoteListProps {
   languages: string[];
   selectedNoteIds: Set<string>;
   onToggleSelect: (id: string) => void;
+  displayDensity: 'compact' | 'cozy';
 }
 
 export function NoteList({
@@ -28,6 +30,7 @@ export function NoteList({
   languages,
   selectedNoteIds,
   onToggleSelect,
+  displayDensity,
 }: NoteListProps) {
   return (
     <div className="flex flex-col h-full border-r border-border/50 bg-muted/10">
@@ -53,9 +56,11 @@ export function NoteList({
               <div
                 key={note.id}
                 onClick={() => onSelectNote(note.id)}
-                className={`p-4 cursor-pointer transition-all hover:bg-primary/5 relative group ${
-                  selectedNoteId === note.id ? 'bg-primary/10 border-l-4 border-primary' : 'border-l-4 border-transparent'
-                }`}
+                className={cn(
+                  "cursor-pointer transition-all hover:bg-primary/5 relative group border-l-4",
+                  displayDensity === 'compact' ? "p-2.5" : "p-4",
+                  selectedNoteId === note.id ? "bg-primary/10 border-primary" : "border-transparent"
+                )}
               >
                 <div className="flex justify-between items-start mb-1">
                   <div className="flex items-center gap-2 flex-1 min-w-0">

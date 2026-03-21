@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Code2, FolderOpen, Hash, Plus, ChevronLeft, ChevronRight, ChevronDown, Star, Clock, Tag, Inbox } from 'lucide-react';
+import { Code2, FolderOpen, Hash, Plus, ChevronLeft, ChevronRight, ChevronDown, Star, Clock, Tag, Inbox, Layout, Maximize2, Minimize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -22,6 +22,8 @@ interface SidebarProps {
   selectedTags: string[];
   onToggleTag: (tag: string) => void;
   onClearTags: () => void;
+  displayDensity: 'compact' | 'cozy';
+  onToggleDensity: () => void;
 }
 
 export function Sidebar({ 
@@ -36,7 +38,9 @@ export function Sidebar({
   tags,
   selectedTags,
   onToggleTag,
-  onClearTags
+  onClearTags,
+  displayDensity,
+  onToggleDensity
 }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
@@ -286,7 +290,30 @@ export function Sidebar({
         {!collapsed && (
           <>
             <Statistics notes={notes} />
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex bg-sidebar-accent/50 rounded-lg p-0.5 border border-sidebar-border/50">
+                <button
+                  onClick={onToggleDensity}
+                  className={cn(
+                    "p-1.5 rounded-md transition-all",
+                    displayDensity === 'compact' ? "bg-sidebar-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+                  )}
+                  title="Mode Compact"
+                >
+                  <Minimize2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={onToggleDensity}
+                  className={cn(
+                    "p-1.5 rounded-md transition-all",
+                    displayDensity === 'cozy' ? "bg-sidebar-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+                  )}
+                  title="Mode Confort"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <div className="h-4 w-px bg-sidebar-border/50 mx-1" />
               <ExportImport notes={notes} onImport={onImport} />
               <ThemeToggle />
             </div>

@@ -1,4 +1,6 @@
 import { Note } from '@/types/note';
+import { Link2, Link2Off } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface NoteLinkProps {
   content: string;
@@ -37,9 +39,10 @@ export function parseNoteLinks(
             e.stopPropagation();
             onNoteClick(linkedNote.id);
           }}
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium text-sm"
+          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-all font-semibold border border-primary/20 hover:border-primary/40 group/link"
         >
-          📎 {linkedNote.title}
+          <Link2 className="w-3.5 h-3.5 transition-transform group-hover/link:rotate-12" />
+          {linkedNote.title}
         </button>
       );
     } else {
@@ -47,10 +50,11 @@ export function parseNoteLinks(
       parts.push(
         <span
           key={`broken-${match.index}`}
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-destructive/10 text-destructive/70 text-sm line-through"
+          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted text-muted-foreground/60 line-through decoration-muted-foreground/30 border border-transparent"
           title="Note non trouvée"
         >
-          [[{noteTitle}]]
+          <Link2Off className="w-3.5 h-3.5 opacity-50" />
+          {noteTitle}
         </span>
       );
     }

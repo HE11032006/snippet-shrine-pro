@@ -29,7 +29,8 @@ const Index = () => {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [isCompact, setIsCompact] = useState(false);
+  const [isCompact, setIsCompact] = useState(false); // Global sidebar compact
+  const [displayDensity, setDisplayDensity] = useState<'compact' | 'cozy'>('cozy');
   const searchInputRef = useRef<HTMLInputElement>(null);
   
   // Initialize theme
@@ -292,6 +293,8 @@ const Index = () => {
         selectedTags={selectedTags}
         onToggleTag={handleToggleTag}
         onClearTags={handleClearTags}
+        displayDensity={displayDensity}
+        onToggleDensity={() => setDisplayDensity(prev => prev === 'compact' ? 'cozy' : 'compact')}
       />
 
       {/* Column 2: Note List (Master) */}
@@ -307,6 +310,7 @@ const Index = () => {
           languages={allLanguages}
           selectedNoteIds={selectedNoteIds}
           onToggleSelect={handleToggleSelect}
+          displayDensity={displayDensity}
         />
       </div>
 

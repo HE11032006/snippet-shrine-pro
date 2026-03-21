@@ -1,5 +1,5 @@
-import { Edit3, Trash2, Copy, Check, Files, Sparkles, Share2, Wrench } from 'lucide-react';
-import { useState } from 'react';
+import { Edit3, Trash2, Copy, Check, Files, Sparkles, Share2, Wrench, Link2, ArrowUpRight } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import ReactMarkdown from 'react-markdown';
@@ -23,6 +23,16 @@ interface NoteCardProps {
 
 export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onToggleSelect, allNotes = [], onNoteClick }: NoteCardProps) {
   const [copied, setCopied] = useState(false);
+
+  // Calculate backlinks (notes that link to this note)
+  const backlinks = useMemo(() => {
+    if (!note.title || allNotes.length === 0) return [];
+    const searchStr = `[[${note.title}]]`.toLowerCase();
+    return allNotes.filter(n => 
+      n.id !== note.id && 
+      n.description.toLowerCase().includes(searchStr)
+    );
+  }, [note.id, note.title, allNotes]);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(note.code);
@@ -57,22 +67,30 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onTo
   // Render description with note links
   const renderDescription = (text: string) => {
     if (!onNoteClick || allNotes.length === 0) {
-      return <ReactMarkdown>{text}</ReactMarkdown>;
+      return (
+        <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed">
+          <ReactMarkdown>{text}</ReactMarkdown>
+        </div>
+      );
     }
     
     // Check if text contains note links
     if (text.includes('[[') && text.includes(']]')) {
       const parts = parseNoteLinks(text, allNotes, onNoteClick);
       return (
-        <div className="prose-custom">
+        <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed">
           {parts.map((part, i) => (
-            typeof part === 'string' ? <ReactMarkdown key={i}>{part}</ReactMarkdown> : <span key={i}>{part}</span>
+            typeof part === 'string' ? <ReactMarkdown key={i}>{part}</ReactMarkdown> : <span key={i} className="inline-block mx-0.5 align-middle">{part}</span>
           ))}
         </div>
       );
     }
     
-    return <ReactMarkdown>{text}</ReactMarkdown>;
+    return (
+      <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed">
+        <ReactMarkdown>{text}</ReactMarkdown>
+      </div>
+    );
   };
 
   return (
@@ -155,10 +173,8 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onTo
 
       {/* Description */}
       {note.description && (
-        <div className={`py-4 border-b border-border/50 bg-muted/20 ${onToggleSelect ? 'pl-12 pr-5' : 'px-5'}`}>
-          <div className="prose-custom text-sm">
-            {renderDescription(note.description)}
-          </div>
+        <div className={`py-5 border-b border-border/50 bg-muted/5 ${onToggleSelect ? 'pl-12 pr-5' : 'px-5'}`}>
+          {renderDescription(note.description)}
         </div>
       )}
 
@@ -239,11 +255,33 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onTo
         </div>
       )}
 
+      {/* Backlinks / Mentions */}
+      {backlinks.length > 0 && (
+        <div className="px-5 py-3 bg-primary/5 border-t border-primary/10 flex items-center gap-3 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-primary uppercase tracking-wider shrink-0">
+            <Link2 className="w-3 h-3" />
+            Mentions ({backlinks.length})
+          </div>
+          <div className="flex gap-2">
+            {backlinks.map(link => (
+              <button
+                key={link.id}
+                onClick={() => onNoteClick?.(link.id)}
+                className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-primary whitespace-nowrap bg-background/50 px-2 py-1 rounded-md border border-border/50 transition-colors group/backlink"
+              >
+                {link.title}
+                <ArrowUpRight className="w-2.5 h-2.5 opacity-0 group-hover/backlink:opacity-100 transition-opacity" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Tags */}
       {note.tags.length > 0 && (
-        <div className="px-5 py-4 flex flex-wrap gap-2 bg-muted/20">
+        <div className="px-5 py-4 flex flex-wrap gap-2 bg-muted/10 border-t border-border/10">
           {note.tags.map(tag => (
-            <span key={tag} className="tag-badge text-xs">
+            <span key={tag} className="tag-badge text-[10px] px-2 py-0.5">
               #{tag}
             </span>
           ))}
