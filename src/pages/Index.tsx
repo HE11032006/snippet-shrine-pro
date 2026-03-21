@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Maximize2 } from 'lucide-react';
 import { useNotes } from '@/hooks/useNotes';
 import { Note, NoteFormData } from '@/types/note';
 import { Sidebar } from '@/components/Sidebar';
@@ -15,6 +15,11 @@ import { toast } from '@/hooks/use-toast';
 import { NoteTemplate } from '@/components/NoteTemplates';
 import { Button } from '@/components/ui/button';
 import { SettingsDialog } from '@/components/SettingsDialog';
+import { 
+  PanelGroup, 
+  Panel, 
+  PanelResizeHandle 
+} from 'react-resizable-panels';
 
 const Index = () => {
   const { notes, isLoaded, addNote, updateNote, deleteNote, getCategories, getSubcategories, getAllTags, duplicateNote, importNotes, toggleStar } = useNotes();
@@ -30,7 +35,6 @@ const Index = () => {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [isCompact, setIsCompact] = useState(false); // Global sidebar compact
   const [displayDensity, setDisplayDensity] = useState<'compact' | 'cozy'>('cozy');
   const [settings, setSettings] = useState({
     codeFontSize: '0.9rem',
@@ -38,10 +42,11 @@ const Index = () => {
     theme: 'dark'
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isZenMode, setIsZenMode] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   
   // Initialize theme
-  const { theme, toggleTheme } = useTheme();
+  const { toggleTheme } = useTheme();
 
   const categories = useMemo(() => getCategories(), [notes, getCategories]);
   const allTags = useMemo(() => getAllTags(), [notes, getAllTags]);
@@ -281,6 +286,7 @@ const Index = () => {
     onSearch: handleFocusSearch,
     onCancel: handleCancelForm,
     onPalette: () => setIsPaletteOpen(prev => !prev),
+    onZen: () => setIsZenMode(prev => !prev),
   }, !isFormOpen);
 
   if (!isLoaded) {
@@ -292,92 +298,123 @@ const Index = () => {
   }
 
   return (
-    <div className="flex h-screen w-full bg-background overflow-hidden">
-      {/* Column 1: Sidebar */}
-      <Sidebar
-        categories={categories}
-        selectedCategory={selectedCategory}
-        selectedSubcategory={selectedSubcategory}
-        onSelectCategory={handleSelectCategory}
-        onNewNote={handleNewNote}
-        notesCount={notes.length}
-        notes={notes}
-        onImport={importNotes}
-        tags={allTags}
-        selectedTags={selectedTags}
-        onToggleTag={handleToggleTag}
-        onClearTags={handleClearTags}
-        displayDensity={displayDensity}
-        onToggleDensity={() => setDisplayDensity(prev => prev === 'compact' ? 'cozy' : 'compact')}
-        onOpenSettings={() => setIsSettingsOpen(true)}
+    <div className="h-screen w-full bg-background overflow-hidden flex flex-col relative">
+      <PanelGroup direction="horizontal" className="h-full">
+        {/* Column 1: Sidebar */}
+        {!isZenMode && (
+          <>
+            <Panel defaultSize={20} minSize={15} maxSize={30} className="h-full">
+              <Sidebar
+                categories={categories}
+                selectedCategory={selectedCategory}
+                selectedSubcategory={selectedSubcategory}
+                onSelectCategory={handleSelectCategory}
+                onNewNote={handleNewNote}
+                notesCount={notes.length}
+                notes={notes}
+                onImport={importNotes}
+                tags={allTags}
+                selectedTags={selectedTags}
+                onToggleTag={handleToggleTag}
+                onClearTags={handleClearTags}
+                displayDensity={displayDensity}
+                onToggleDensity={() => setDisplayDensity(prev => prev === 'compact' ? 'cozy' : 'compact')}
+                onOpenSettings={() => setIsSettingsOpen(true)}
+                onToggleZen={() => setIsZenMode(prev => !prev)}
+              />
+            </Panel>
+            <PanelResizeHandle className="w-1 bg-border/20 hover:bg-primary/30 transition-colors cursor-col-resize" />
+          </>
+        )}
+
+        {/* Column 2: Note List (Master) */}
+        {!isZenMode && (
+          <>
+            <Panel defaultSize={30} minSize={20} maxSize={45} className="h-full">
+              <div className="h-full flex flex-col border-r border-border/50">
+                <NoteList
+                  notes={filteredNotes}
+                  selectedNoteId={selectedNoteId}
+                  onSelectNote={handleNoteClick}
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  advancedFilters={advancedFilters}
+                  onFiltersChange={setAdvancedFilters}
+                  languages={allLanguages}
+                  selectedNoteIds={selectedNoteIds}
+                  onToggleSelect={handleToggleSelect}
+                  displayDensity={displayDensity}
+                  onToggleDensity={() => setDisplayDensity(prev => prev === 'compact' ? 'cozy' : 'compact')}
+                  allTags={allTags}
+                  settings={settings}
+                />
+              </div>
+            </Panel>
+            <PanelResizeHandle className="w-1 bg-border/20 hover:bg-primary/30 transition-colors cursor-col-resize" />
+          </>
+        )}
+
+        {/* Column 3: Note Detail (Detail) */}
+        <Panel className="h-full">
+          <main className="h-full overflow-hidden relative bg-muted/5">
+            {isZenMode && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setIsZenMode(false)}
+                className="absolute top-4 left-4 z-50 rounded-full bg-background/50 backdrop-blur border shadow-sm hover:bg-background"
+                title="Quitter le mode Zen"
+              >
+                <Maximize2 className="w-4 h-4" />
+              </Button>
+            )}
+            <NoteDetail
+              note={notes.find(n => n.id === selectedNoteId) || null}
+              onEdit={handleEditNote}
+              onDelete={handleDeleteNote}
+              onDuplicate={handleDuplicateNote}
+              onToggleStar={toggleStar}
+              settings={settings}
+            />
+          </main>
+        </Panel>
+      </PanelGroup>
+
+      {/* Overlays */}
+      <SettingsDialog
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        settings={settings}
+        onUpdateSettings={setSettings}
       />
 
-      {/* Column 2: Note List (Master) */}
-      <div className="w-[350px] lg:w-[400px] flex-shrink-0 flex flex-col border-r border-border/50">
-        <NoteList
-          notes={filteredNotes}
-          selectedNoteId={selectedNoteId}
-          onSelectNote={handleNoteClick}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          advancedFilters={advancedFilters}
-          onFiltersChange={setAdvancedFilters}
-          languages={allLanguages}
-          selectedNoteIds={selectedNoteIds}
-          onToggleSelect={handleToggleSelect}
-          onAdvancedFiltersChange={setAdvancedFilters}
-          displayDensity={displayDensity}
-          onToggleDensity={() => setDisplayDensity(prev => prev === 'compact' ? 'cozy' : 'compact')}
-          allTags={allTags}
-          settings={settings}
-        />
-      </div>
+      {!isSelectionMode && (
+        <div className="absolute bottom-8 right-8 z-30">
+          <Button
+            size="lg"
+            className="rounded-full shadow-2xl px-6 py-6 h-14 bg-primary hover:bg-primary/90 transition-all hover:scale-105 active:scale-95 group font-bold"
+            onClick={() => handleNewNote()}
+          >
+            <Plus className="w-6 h-6 mr-2 transition-transform group-hover:rotate-90" />
+            Nouveau Snippet
+            <kbd className="ml-3 hidden sm:inline-flex h-5 items-center gap-1 rounded bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium opacity-100">
+              <span className="text-xs">Ctrl+N</span>
+            </kbd>
+          </Button>
+        </div>
+      )}
 
-      {/* Column 3: Note Detail (Detail) */}
-      <main className="flex-1 overflow-hidden relative bg-muted/5">
-        <NoteDetail
-          note={notes.find(n => n.id === selectedNoteId) || null}
-          onEdit={handleEditNote}
-          onDelete={handleDeleteNote}
-          onDuplicate={handleDuplicateNote}
-          onToggleStar={toggleStar}
-          settings={settings}
+      {/* Selection Bar */}
+      {isSelectionMode && selectedNoteIds.size > 0 && (
+        <SelectionBar
+          selectedCount={selectedNoteIds.size}
+          totalCount={filteredNotes.length}
+          onSelectAll={handleSelectAll}
+          onClearSelection={handleClearSelection}
+          onDeleteSelected={handleDeleteSelected}
+          onExportSelected={handleBatchExport}
         />
-
-        <SettingsDialog
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-          settings={settings}
-          onUpdateSettings={setSettings}
-        />
-        {!isSelectionMode && (
-          <div className="absolute bottom-8 right-8 z-30">
-            <Button
-              size="lg"
-              className="rounded-full shadow-2xl px-6 py-6 h-14 bg-primary hover:bg-primary/90 transition-all hover:scale-105 active:scale-95 group font-bold"
-              onClick={() => handleNewNote()}
-            >
-              <Plus className="w-6 h-6 mr-2 transition-transform group-hover:rotate-90" />
-              Nouveau Snippet
-              <kbd className="ml-3 hidden sm:inline-flex h-5 items-center gap-1 rounded bg-primary-foreground/20 px-1.5 font-mono text-[10px] font-medium opacity-100">
-                <span className="text-xs">Ctrl+N</span>
-              </kbd>
-            </Button>
-          </div>
-        )}
-
-        {/* Selection Bar */}
-        {isSelectionMode && selectedNoteIds.size > 0 && (
-          <SelectionBar
-            selectedCount={selectedNoteIds.size}
-            totalCount={filteredNotes.length}
-            onSelectAll={handleSelectAll}
-            onClearSelection={handleClearSelection}
-            onDeleteSelected={handleDeleteSelected}
-            onExportSelected={handleBatchExport}
-          />
-        )}
-      </main>
+      )}
 
       {/* Note Form Modal */}
       {isFormOpen && (

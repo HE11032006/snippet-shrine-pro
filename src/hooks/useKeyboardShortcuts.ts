@@ -7,6 +7,7 @@ interface ShortcutHandlers {
   onSearch?: () => void;
   onDuplicate?: () => void;
   onPalette?: () => void;
+  onZen?: () => void;
 }
 
 export function useKeyboardShortcuts(handlers: ShortcutHandlers, enabled = true) {
@@ -52,6 +53,13 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers, enabled = true)
     if (isCtrlOrMeta && e.shiftKey && e.key.toLowerCase() === 'j') {
       e.preventDefault();
       handlers.onPalette?.();
+      return;
+    }
+
+    // Ctrl/Cmd + K - Zen Mode
+    if (isCtrlOrMeta && e.key === 'k') {
+      e.preventDefault();
+      handlers.onZen?.();
       return;
     }
   }, [handlers, enabled]);
