@@ -14,6 +14,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { toast } from '@/hooks/use-toast';
 import { NoteTemplate } from '@/components/NoteTemplates';
 import { Button } from '@/components/ui/button';
+import { SettingsDialog } from '@/components/SettingsDialog';
 
 const Index = () => {
   const { notes, isLoaded, addNote, updateNote, deleteNote, getCategories, getSubcategories, getAllTags, duplicateNote, importNotes, toggleStar } = useNotes();
@@ -31,6 +32,12 @@ const Index = () => {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [isCompact, setIsCompact] = useState(false); // Global sidebar compact
   const [displayDensity, setDisplayDensity] = useState<'compact' | 'cozy'>('cozy');
+  const [settings, setSettings] = useState({
+    codeFontSize: '0.9rem',
+    titleFontSize: '1.25rem',
+    theme: 'dark'
+  });
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   
   // Initialize theme
@@ -57,6 +64,13 @@ const Index = () => {
   const filteredNotes = useMemo(() => {
     let result = notes;
 
+    // Filter by Advanced Filters (Tags)
+    if (advancedFilters.tags.length > 0) {
+      result = result.filter(note => 
+        advancedFilters.tags.every(tag => note.tags.includes(tag))
+      );
+    }
+    
     // Filter by category or smart folder
     if (selectedCategory) {
       if (selectedCategory === '__starred__') {
@@ -295,6 +309,7 @@ const Index = () => {
         onClearTags={handleClearTags}
         displayDensity={displayDensity}
         onToggleDensity={() => setDisplayDensity(prev => prev === 'compact' ? 'cozy' : 'compact')}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
       {/* Column 2: Note List (Master) */}
@@ -310,7 +325,11 @@ const Index = () => {
           languages={allLanguages}
           selectedNoteIds={selectedNoteIds}
           onToggleSelect={handleToggleSelect}
+          onAdvancedFiltersChange={setAdvancedFilters}
           displayDensity={displayDensity}
+          onToggleDensity={() => setDisplayDensity(prev => prev === 'compact' ? 'cozy' : 'compact')}
+          allTags={allTags}
+          settings={settings}
         />
       </div>
 
@@ -322,9 +341,15 @@ const Index = () => {
           onDelete={handleDeleteNote}
           onDuplicate={handleDuplicateNote}
           onToggleStar={toggleStar}
+          settings={settings}
         />
 
-        {/* Global Floating Action Button */}
+        <SettingsDialog
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          settings={settings}
+          onUpdateSettings={setSettings}
+        />
         {!isSelectionMode && (
           <div className="absolute bottom-8 right-8 z-30">
             <Button

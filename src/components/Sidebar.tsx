@@ -1,5 +1,22 @@
 import { useState, useMemo } from 'react';
-import { Code2, FolderOpen, Hash, Plus, ChevronLeft, ChevronRight, ChevronDown, Star, Clock, Tag, Inbox, Layout, Maximize2, Minimize2 } from 'lucide-react';
+import { LanguageIcon } from './LanguageIcon';
+import { 
+  Code2, 
+  FolderOpen, 
+  Hash, 
+  Plus, 
+  ChevronLeft, 
+  ChevronRight, 
+  ChevronDown, 
+  Star, 
+  Clock, 
+  Tag, 
+  Inbox, 
+  Layout, 
+  Maximize2, 
+  Minimize2, 
+  Settings2 
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -24,6 +41,7 @@ interface SidebarProps {
   onClearTags: () => void;
   displayDensity: 'compact' | 'cozy';
   onToggleDensity: () => void;
+  onOpenSettings: () => void;
 }
 
 export function Sidebar({ 
@@ -40,7 +58,8 @@ export function Sidebar({
   onToggleTag,
   onClearTags,
   displayDensity,
-  onToggleDensity
+  onToggleDensity,
+  onOpenSettings
 }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
@@ -217,11 +236,11 @@ export function Sidebar({
                     className={cn(
                       'w-full flex items-center justify-center p-2.5 rounded-lg transition-all duration-200',
                       isSelected
-                        ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
+                        ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                         : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
                     )}
                   >
-                    <Hash className="w-5 h-5" />
+                    <LanguageIcon language={category} className="w-5 h-5" /> {/* Replaced Hash with LanguageIcon */}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right">{category}</TooltipContent>
@@ -314,10 +333,32 @@ export function Sidebar({
                 </button>
               </div>
               <div className="h-4 w-px bg-sidebar-border/50 mx-1" />
+              <button
+                onClick={onOpenSettings}
+                className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-sidebar-accent transition-all"
+                title="Paramètres"
+              >
+                <Settings2 className="w-4 h-4" />
+              </button>
               <ExportImport notes={notes} onImport={onImport} />
               <ThemeToggle />
             </div>
           </>
+        )}
+        {collapsed && (
+          <div className="px-3 pb-4">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={onOpenSettings}
+                  className="w-full flex items-center justify-center p-2.5 rounded-lg text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-all duration-200"
+                >
+                  <Settings2 className="w-5 h-5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Paramètres</TooltipContent>
+            </Tooltip>
+          </div>
         )}
         <Button
           variant="ghost"

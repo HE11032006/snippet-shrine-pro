@@ -9,6 +9,8 @@ import { toast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
 import { parseNoteLinks } from '@/components/NoteLink';
+import { LanguageIcon } from './LanguageIcon';
+import { cn } from '@/lib/utils';
 
 interface NoteCardProps {
   note: Note;
@@ -19,9 +21,14 @@ interface NoteCardProps {
   onToggleSelect?: (id: string) => void;
   allNotes?: Note[];
   onNoteClick?: (noteId: string) => void;
+  settings?: {
+    codeFontSize: string;
+    titleFontSize: string;
+    theme: string;
+  };
 }
 
-export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onToggleSelect, allNotes = [], onNoteClick }: NoteCardProps) {
+export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onToggleSelect, allNotes = [], onNoteClick, settings }: NoteCardProps) {
   const [copied, setCopied] = useState(false);
 
   // Calculate backlinks (notes that link to this note)
@@ -111,7 +118,10 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onTo
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-2 flex-wrap">
-              <span className="tag-badge">{note.category}</span>
+              <div className="flex items-center gap-1.5 tag-badge">
+                <LanguageIcon language={note.language} className="w-3.5 h-3.5" />
+                {note.category}
+              </div>
               {note.subcategory && (
                 <span className="tag-badge bg-secondary/50 text-secondary-foreground">{note.subcategory}</span>
               )}
@@ -123,7 +133,7 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onTo
                 })}
               </span>
             </div>
-            <h3 className="text-xl font-bold text-foreground">{note.title}</h3>
+            <h3 className="font-bold text-foreground transition-all" style={{ fontSize: settings?.titleFontSize || '1.25rem' }}>{note.title}</h3>
           </div>
           <div className="flex items-center gap-1">
             {onDuplicate && (
@@ -238,7 +248,7 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onTo
             customStyle={{
               margin: 0,
               borderRadius: 0,
-              fontSize: '0.9rem',
+              fontSize: settings?.codeFontSize || '0.9rem',
               lineHeight: '1.6',
               padding: '1.5rem',
               background: 'transparent',

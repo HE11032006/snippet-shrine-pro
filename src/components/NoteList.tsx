@@ -4,6 +4,7 @@ import { AdvancedSearch, AdvancedSearchFilters } from './AdvancedSearch';
 import { FileCode2, Clock, Tag, Star } from 'lucide-react';
 import { Note } from '@/types/note';
 import { cn } from '@/lib/utils';
+import { LanguageIcon } from './LanguageIcon';
 
 interface NoteListProps {
   notes: Note[];
@@ -17,6 +18,13 @@ interface NoteListProps {
   selectedNoteIds: Set<string>;
   onToggleSelect: (id: string) => void;
   displayDensity: 'compact' | 'cozy';
+  onToggleDensity: () => void;
+  allTags: string[];
+  settings?: {
+    codeFontSize: string;
+    titleFontSize: string;
+    theme: string;
+  };
 }
 
 export function NoteList({
@@ -31,6 +39,9 @@ export function NoteList({
   selectedNoteIds,
   onToggleSelect,
   displayDensity,
+  onToggleDensity,
+  allTags,
+  settings
 }: NoteListProps) {
   return (
     <div className="flex flex-col h-full border-r border-border/50 bg-muted/10">
@@ -44,6 +55,7 @@ export function NoteList({
             filters={advancedFilters} 
             onChange={onFiltersChange} 
             languages={languages} 
+            allTags={allTags}
           />
         </div>
       </div>
@@ -81,9 +93,12 @@ export function NoteList({
                 </p>
 
                 <div className="flex items-center gap-2 overflow-hidden">
-                  <span className="px-1.5 py-0.5 rounded bg-secondary/50 text-[9px] font-bold text-secondary-foreground uppercase tracking-tight">
-                    {note.language}
-                  </span>
+                  <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-secondary/50 border border-secondary/30">
+                    <LanguageIcon language={note.language} className="w-3 h-3" />
+                    <span className="text-[9px] font-bold text-secondary-foreground uppercase tracking-tight">
+                      {note.language}
+                    </span>
+                  </div>
                   {note.tags.slice(0, 2).map(tag => (
                     <span key={tag} className="text-[9px] text-primary/70 font-medium">#{tag}</span>
                   ))}

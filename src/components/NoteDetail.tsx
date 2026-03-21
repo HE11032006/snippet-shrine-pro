@@ -10,7 +10,12 @@ interface NoteDetailProps {
   onDelete: (id: string) => void;
   onDuplicate: (note: Note) => void;
   onToggleStar: (id: string) => void;
-  onBack?: () => void; // for mobile/compact views
+  onBack?: () => void;
+  settings: {
+    codeFontSize: string;
+    titleFontSize: string;
+    theme: string;
+  };
 }
 
 export function NoteDetail({
@@ -20,6 +25,7 @@ export function NoteDetail({
   onDuplicate,
   onToggleStar,
   onBack,
+  settings
 }: NoteDetailProps) {
   if (!note) {
     return (
@@ -69,12 +75,16 @@ export function NoteDetail({
 
         {/* The Actual Content */}
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <NoteCard 
-            note={note} 
-            onEdit={onEdit} 
-            onDelete={onDelete} 
+          <NoteCard
+            note={note}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onDuplicate={() => onDuplicate(note)}
+            allNotes={[]} // We could pass allNotes here if we have them
+            onNoteClick={() => {}} // We could pass onNoteClick here
+            settings={settings}
           />
-        </div>
+</div>
       </div>
     </div>
   );
