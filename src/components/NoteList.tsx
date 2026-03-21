@@ -79,6 +79,11 @@ export function NoteList({
               >
                 <div 
                   onClick={() => onSelectNote(note.id)}
+                  draggable={true}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('noteId', note.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
                   className={cn(
                     "group relative cursor-pointer rounded-xl border transition-all duration-200",
                     displayDensity === 'compact' ? "p-2.5" : "p-3",

@@ -280,6 +280,17 @@ const Index = () => {
     }
   }, [isSelectionMode, handleToggleSelect]);
 
+  const handleMoveNoteToCategory = useCallback((noteId: string, category: string) => {
+    const note = notes.find(n => n.id === noteId);
+    if (note) {
+      updateNote(noteId, { ...note, category, subcategory: null });
+      toast({
+        title: "Snippet déplacé",
+        description: `"${note.title}" est maintenant dans ${category}.`,
+      });
+    }
+  }, [notes, updateNote]);
+
   // Global keyboard shortcuts
   useKeyboardShortcuts({
     onNewNote: () => handleNewNote(),
@@ -321,6 +332,7 @@ const Index = () => {
                 onToggleDensity={() => setDisplayDensity(prev => prev === 'compact' ? 'cozy' : 'compact')}
                 onOpenSettings={() => setIsSettingsOpen(true)}
                 onToggleZen={() => setIsZenMode(prev => !prev)}
+                onMoveNoteToCategory={handleMoveNoteToCategory}
               />
             </Panel>
             <PanelResizeHandle className="w-1 bg-border/20 hover:bg-primary/30 transition-colors cursor-col-resize" />

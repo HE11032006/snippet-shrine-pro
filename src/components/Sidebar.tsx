@@ -43,6 +43,7 @@ interface SidebarProps {
   onToggleDensity: () => void;
   onOpenSettings: () => void;
   onToggleZen: () => void;
+  onMoveNoteToCategory: (noteId: string, category: string) => void;
 }
 
 // Local Component: SmartFolders
@@ -98,7 +99,8 @@ function CategoryList({
   selectedSubcategory, 
   onSelectCategory, 
   collapsed,
-  notes 
+  notes,
+  onMoveNoteToCategory
 }: {
   categories: string[],
   expandedCategories: string[],
@@ -107,8 +109,22 @@ function CategoryList({
   selectedSubcategory: string | null,
   onSelectCategory: (c: string | null, s?: string | null) => void,
   collapsed: boolean,
-  notes: Note[]
+  notes: Note[],
+  onMoveNoteToCategory: (noteId: string, category: string) => void
 }) {
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, category: string) => {
+    e.preventDefault();
+    const noteId = e.dataTransfer.getData('noteId');
+    if (noteId) {
+      onMoveNoteToCategory(noteId, category);
+    }
+  };
+
   return (
     <div className="space-y-1">
       {categories.map(category => {
@@ -128,11 +144,14 @@ function CategoryList({
                    if (!isSelected) onSelectCategory(category);
                 }
               }}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, category)}
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all group",
                 isSelected && !selectedSubcategory 
                   ? "bg-primary/10 text-primary border-l-2 border-primary rounded-l-none" 
-                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                "drop-target:bg-primary/20" // Placeholder for visual feedback
               )}
             >
               <FolderOpen className={cn("w-4 h-4", isSelected ? "text-primary" : "opacity-60")} />
@@ -188,6 +207,7 @@ export function Sidebar({
   onToggleDensity,
   onOpenSettings,
   onToggleZen,
+  onMoveNoteToCategory,
 }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
@@ -257,16 +277,17 @@ export function Sidebar({
         {/* Categories */}
         <div className="px-2 mb-6">
           {!collapsed && <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 mb-2">Bibliothèque</h3>}
-          <CategoryList 
-            categories={categories}
-            expandedCategories={expandedCategories}
-            toggleCategory={toggleCategory}
-            selectedCategory={selectedCategory}
-            selectedSubcategory={selectedSubcategory}
-            onSelectCategory={onSelectCategory}
-            collapsed={collapsed}
-            notes={notes}
-          />
+            <CategoryList 
+              categories={categories}
+              expandedCategories={expandedCategories}
+              toggleCategory={toggleCategory}
+              selectedCategory={selectedCategory}
+              selectedSubcategory={selectedSubcategory}
+              onSelectCategory={onSelectCategory}
+              collapsed={collapsed}
+              notes={notes}
+              onMoveNoteToCategory={onMoveNoteToCategory}
+            />
         </div>
 
         {/* Tag Filter */}
