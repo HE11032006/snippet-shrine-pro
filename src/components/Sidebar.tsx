@@ -234,12 +234,12 @@ export function Sidebar({
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
               <Plus className="w-5 h-5 text-primary" />
             </div>
-            <span className="font-display font-bold text-lg tracking-tight text-foreground">Shrine</span>
+            <span className="font-display font-black text-2xl tracking-tighter text-primary">HE</span>
           </div>
         )}
         {collapsed ? (
-          <div className="w-full flex justify-center">
-             <Plus className="w-6 h-6 text-primary" />
+          <div className="w-full flex justify-center py-2">
+             <span className="font-display font-black text-xl tracking-tighter text-primary">HE</span>
           </div>
         ) : (
            <Button 
@@ -365,7 +365,7 @@ export function Sidebar({
         )}
 
         {collapsed && (
-          <div className="flex flex-col items-center gap-2 py-2">
+          <div className="flex flex-col items-center gap-4 py-4">
              <TooltipProvider delayDuration={0}>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -373,9 +373,9 @@ export function Sidebar({
                     variant="ghost"
                     size="icon"
                     onClick={onToggleZen}
-                    className="h-9 w-9 rounded-lg"
+                    className="h-10 w-10 rounded-xl"
                   >
-                    <Maximize2 className="w-4 h-4" />
+                    <Maximize2 className="w-5 h-5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="right">Mode Zen (Ctrl+K)</TooltipContent>
@@ -387,9 +387,9 @@ export function Sidebar({
                     variant="ghost"
                     size="icon"
                     onClick={onOpenSettings}
-                    className="h-9 w-9 rounded-lg"
+                    className="h-10 w-10 rounded-xl"
                   >
-                    <Settings2 className="w-4 h-4" />
+                    <Settings2 className="w-5 h-5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="right">Paramètres</TooltipContent>
