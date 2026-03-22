@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
+import { Markdown } from 'tiptap-markdown';
 import CodeMirror from '@uiw/react-codemirror';
 import { vim } from '@replit/codemirror-vim';
 import { langs } from '@uiw/codemirror-extensions-langs';
@@ -69,13 +70,14 @@ export function FullPageEditor({
   const editor = useEditor({
     extensions: [
       StarterKit,
+      Markdown,
       Placeholder.configure({
         placeholder: "Commencez à écrire... ou tapez '/' pour les commandes, ou appuyez sur entrée.",
       }),
     ],
     content: formData.description,
     onUpdate: ({ editor }) => {
-      setFormData(prev => ({ ...prev, description: editor.getHTML() }));
+      setFormData(prev => ({ ...prev, description: editor.storage.markdown.getMarkdown() }));
       
       // Simple slash command detection
       const text = editor.getText();
