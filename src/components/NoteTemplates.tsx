@@ -80,15 +80,17 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
     },
   },
   {
-    id: 'quick-note',
-    name: 'Note rapide',
-    icon: <Zap className="w-4 h-4" />,
-    description: 'Note simple et rapide',
+    id: 'daily-log',
+    name: 'Journal de Bord',
+    icon: <BookOpen className="w-4 h-4 text-emerald-500" />,
+    description: 'Log quotidien de dev',
     data: {
       title: '',
-      description: '',
+      category: 'Journal',
+      description: '## 🎯 Objectifs du jour\n- [ ] \n\n## 🛠️ Travail accompli\n- \n\n## 🐛 Erreurs & Solutions\n- **Erreur** : \n- **Solution** : \n\n## 💡 Notes & Idées\n- ',
       code: '',
-      tags: [],
+      tags: ['journal', 'daily-log'],
+      language: 'markdown',
     },
   },
 ];

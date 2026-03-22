@@ -12,7 +12,7 @@ import { NoteDetail } from '@/components/NoteDetail';
 import { useTheme } from '@/hooks/useTheme';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { toast } from '@/hooks/use-toast';
-import { NoteTemplate } from '@/components/NoteTemplates';
+import { NoteTemplate, NOTE_TEMPLATES } from '@/components/NoteTemplates';
 import { Button } from '@/components/ui/button';
 import { SettingsDialog } from '@/components/SettingsDialog';
 import { 
@@ -298,6 +298,36 @@ const Index = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
+  const handleNewDailyLog = useCallback(() => {
+    const dailyTemplate = NOTE_TEMPLATES.find(t => t.id === 'daily-log');
+    if (dailyTemplate) {
+      const today = new Date().toLocaleDateString('fr-FR', { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+      });
+      const logData: NoteFormData = {
+        category: 'Journal',
+        subcategory: '',
+        title: `Log - ${today}`,
+        description: dailyTemplate.data.description || '',
+        code: '',
+        language: 'markdown',
+        tags: ['journal', 'daily-log'],
+      };
+      
+      const newNote = addNote(logData);
+      if (newNote) {
+        setSelectedNoteId(newNote.id);
+        setSelectedCategory('Journal');
+        toast({
+          title: 'Journal de bord créé',
+          description: `Log du ${today} initialisé.`,
+        });
+      }
+    }
+  }, [addNote, setSelectedNoteId, setSelectedCategory]);
+
   // Global keyboard shortcuts
   useKeyboardShortcuts({
     onNewNote: () => handleNewNote(),
@@ -345,6 +375,7 @@ const Index = () => {
             onMoveNoteToCategory={handleMoveNoteToCategory}
             collapsed={isSidebarCollapsed}
             onToggleCollapse={handleToggleSidebar}
+            onNewDailyLog={handleNewDailyLog}
           />
         </aside>
       )}

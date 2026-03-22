@@ -15,7 +15,8 @@ import {
   Star,
   Clock,
   FolderOpen,
-  ChevronDown
+  ChevronDown,
+  BookOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -47,6 +48,7 @@ interface SidebarProps {
   onMoveNoteToCategory: (noteId: string, category: string) => void;
   collapsed: boolean;
   onToggleCollapse: () => void;
+  onNewDailyLog: () => void;
 }
 
 // Local Component: SmartFolders
@@ -227,6 +229,7 @@ export function Sidebar({
   onMoveNoteToCategory,
   collapsed,
   onToggleCollapse,
+  onNewDailyLog,
 }: SidebarProps) {
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
@@ -291,6 +294,42 @@ export function Sidebar({
           onSelectCategory={onSelectCategory}
           notes={notes}
         />
+
+        {/* Journal Section */}
+        <div className="px-2 mb-6">
+          {!collapsed && (
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60">Journal</h3>
+              <button 
+                onClick={onNewDailyLog}
+                className="p-1 rounded-md hover:bg-emerald-500/10 text-emerald-500 transition-colors"
+                title="Log du jour"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => onSelectCategory('Journal')}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all group",
+                  selectedCategory === 'Journal' 
+                    ? "bg-emerald-500/10 text-emerald-500 border-l-2 border-emerald-500 rounded-l-none" 
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                  collapsed && "justify-center px-0 h-10 w-10 mx-auto"
+                )}
+              >
+                <BookOpen className={cn(collapsed ? "w-5 h-5" : "w-4 h-4", selectedCategory === 'Journal' ? "text-emerald-500" : "opacity-60")} />
+                {!collapsed && (
+                  <span className="flex-1 text-sm font-medium text-left">Journal de Bord</span>
+                )}
+              </button>
+            </TooltipTrigger>
+            {collapsed && <TooltipContent side="right">Journal de Bord</TooltipContent>}
+          </Tooltip>
+        </div>
 
         {/* Categories */}
         <div className="px-2 mb-6">
