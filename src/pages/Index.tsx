@@ -40,7 +40,10 @@ const Index = () => {
   const [settings, setSettings] = useState({
     codeFontSize: '0.9rem',
     titleFontSize: '1.25rem',
-    theme: 'dark'
+    theme: 'dark',
+    gitRepoPath: '',
+    gitAutoSync: false,
+    gitRemoteUrl: ''
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isZenMode, setIsZenMode] = useState(false);
@@ -293,6 +296,57 @@ const Index = () => {
       });
     }
   }, [notes, updateNote]);
+
+  // Auto-sync notes to Git Repository
+  useEffect(() => {
+    if (settings.gitAutoSync && settings.gitRepoPath && window.require) {
+      const fs = window.require('fs');
+      const path = window.require('path');
+      
+      const syncToGit = async () => {
+        try {
+          // Create category folders and write notes
+          for (const note of notes) {
+            const categoryDir = path.join(settings.gitRepoPath, note.category);
+            if (!fs.existsSync(categoryDir)) {
+              fs.mkdirSync(categoryDir, { recursive: true });
+            }
+            
+            const fileName = `${note.title.replace(/[/\\?%*:|"<>]/g, '-')}.md`;
+            const filePath = path.join(categoryDir, fileName);
+            const content = `---
+title: ${note.title}
+category: ${note.category}
+tags: ${note.tags.join(', ')}
+date: ${note.updatedAt}
+---
+
+${note.description}
+
+\`\`\`${note.language}
+${note.code}
+\`\`\`
+`;
+            fs.writeFileSync(filePath, content);
+          }
+
+          // Optional: Auto-commit
+          if (settings.gitAutoSync) {
+            const { ipcRenderer } = window.require('electron');
+            await ipcRenderer.invoke('git-command', { 
+              command: 'git add . && git commit -m "Auto-sync: update snippets"', 
+              repoPath: settings.gitRepoPath 
+            });
+          }
+        } catch (error) {
+          console.error('Git Sync Error:', error);
+        }
+      };
+
+      const timer = setTimeout(syncToGit, 2000); // Debounce sync
+      return () => clearTimeout(timer);
+    }
+  }, [notes, settings.gitRepoPath, settings.gitAutoSync]);
 
   const handleToggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
