@@ -18,9 +18,9 @@ import { SettingsDialog } from '@/components/SettingsDialog';
 import { 
   PanelGroup, 
   Panel, 
-  PanelResizeHandle,
-  ImperativePanelHandle
+  PanelResizeHandle
 } from 'react-resizable-panels';
+import { cn } from '@/lib/utils';
 
 const Index = () => {
   const { notes, isLoaded, addNote, updateNote, deleteNote, getCategories, getSubcategories, getAllTags, duplicateNote, importNotes, toggleStar } = useNotes();
@@ -47,7 +47,6 @@ const Index = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const sidebarPanelRef = useRef<ImperativePanelHandle>(null);
   
   // Initialize theme
   const { toggleTheme } = useTheme();
@@ -296,15 +295,7 @@ const Index = () => {
   }, [notes, updateNote]);
 
   const handleToggleSidebar = () => {
-    const currentlyCollapsed = isSidebarCollapsed;
-    setIsSidebarCollapsed(!currentlyCollapsed);
-    if (sidebarPanelRef.current) {
-      if (currentlyCollapsed) {
-        sidebarPanelRef.current.expand();
-      } else {
-        sidebarPanelRef.current.collapse();
-      }
-    }
+    setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
   // Global keyboard shortcuts
@@ -325,52 +316,45 @@ const Index = () => {
   }
 
   return (
-    <div className="h-screen w-full bg-background overflow-hidden flex flex-col relative">
-      <PanelGroup direction="horizontal" className="h-full">
-        {/* Column 1: Sidebar */}
-        {!isZenMode && (
-          <>
-            <Panel 
-              ref={sidebarPanelRef}
-              defaultSize={20} 
-              minSize={15} 
-              maxSize={30} 
-              collapsible={true}
-              collapsedSize={4}
-              onCollapse={() => setIsSidebarCollapsed(true)}
-              onExpand={() => setIsSidebarCollapsed(false)}
-              className="h-full"
-            >
-              <Sidebar
-                categories={categories}
-                selectedCategory={selectedCategory}
-                selectedSubcategory={selectedSubcategory}
-                onSelectCategory={handleSelectCategory}
-                onNewNote={handleNewNote}
-                notesCount={notes.length}
-                notes={notes}
-                onImport={importNotes}
-                tags={allTags}
-                selectedTags={selectedTags}
-                onToggleTag={handleToggleTag}
-                onClearTags={handleClearTags}
-                displayDensity={displayDensity}
-                onToggleDensity={() => setDisplayDensity(prev => prev === 'compact' ? 'cozy' : 'compact')}
-                onOpenSettings={() => setIsSettingsOpen(true)}
-                onToggleZen={() => setIsZenMode(prev => !prev)}
-                onMoveNoteToCategory={handleMoveNoteToCategory}
-                collapsed={isSidebarCollapsed}
-                onToggleCollapse={handleToggleSidebar}
-              />
-            </Panel>
-            <PanelResizeHandle className="w-1 bg-border/20 hover:bg-primary/30 transition-colors cursor-col-resize" />
-          </>
-        )}
+    <div className="h-screen w-full bg-background overflow-hidden flex relative">
+      {/* Column 1: Sidebar - Fixed width, sticky to snippet list */}
+      {!isZenMode && (
+        <aside 
+          className={cn(
+            "h-full bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out z-20 shrink-0",
+            isSidebarCollapsed ? "w-16" : "w-64"
+          )}
+        >
+          <Sidebar
+            categories={categories}
+            selectedCategory={selectedCategory}
+            selectedSubcategory={selectedSubcategory}
+            onSelectCategory={handleSelectCategory}
+            onNewNote={handleNewNote}
+            notesCount={notes.length}
+            notes={notes}
+            onImport={importNotes}
+            tags={allTags}
+            selectedTags={selectedTags}
+            onToggleTag={handleToggleTag}
+            onClearTags={handleClearTags}
+            displayDensity={displayDensity}
+            onToggleDensity={() => setDisplayDensity(prev => prev === 'compact' ? 'cozy' : 'compact')}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onToggleZen={() => setIsZenMode(prev => !prev)}
+            onMoveNoteToCategory={handleMoveNoteToCategory}
+            collapsed={isSidebarCollapsed}
+            onToggleCollapse={handleToggleSidebar}
+          />
+        </aside>
+      )}
 
+      {/* Main Resizable Area */}
+      <PanelGroup direction="horizontal" className="flex-1">
         {/* Column 2: Note List (Master) */}
         {!isZenMode && (
           <>
-            <Panel defaultSize={30} minSize={20} maxSize={45} className="h-full">
+            <Panel defaultSize={35} minSize={25} maxSize={45} className="h-full">
               <div className="h-full flex flex-col border-r border-border/50 relative">
                 <NoteList
                   notes={filteredNotes}
@@ -442,7 +426,7 @@ const Index = () => {
         onUpdateSettings={setSettings}
       />
 
-      {!isSelectionMode && (
+      {(!isSelectionMode || isZenMode) && !isFormOpen && (
         <div className="absolute bottom-8 right-8 z-30">
           <Button
             size="lg"
