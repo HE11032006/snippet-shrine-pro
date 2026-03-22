@@ -44,6 +44,8 @@ interface SidebarProps {
   onOpenSettings: () => void;
   onToggleZen: () => void;
   onMoveNoteToCategory: (noteId: string, category: string) => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
 // Local Component: SmartFolders
@@ -208,8 +210,9 @@ export function Sidebar({
   onOpenSettings,
   onToggleZen,
   onMoveNoteToCategory,
+  collapsed,
+  onToggleCollapse,
 }: SidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
   const toggleCategory = (category: string) => {
@@ -245,7 +248,7 @@ export function Sidebar({
            <Button 
             variant="ghost" 
             size="icon" 
-            onClick={() => setCollapsed(true)}
+            onClick={onToggleCollapse}
             className="h-8 w-8 text-muted-foreground hover:text-foreground"
            >
              <ChevronLeft className="w-4 h-4" />
@@ -403,7 +406,7 @@ export function Sidebar({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setCollapsed(true)}
+            onClick={onToggleCollapse}
             className="w-full text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50 h-8 rounded-lg justify-start gap-2 px-3"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -414,7 +417,7 @@ export function Sidebar({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setCollapsed(false)}
+            onClick={onToggleCollapse}
             className="w-full text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50 h-8 rounded-lg justify-center p-0"
           >
              <ChevronRight className="w-4 h-4" />

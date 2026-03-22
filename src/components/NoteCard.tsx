@@ -182,7 +182,7 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onTo
                     <Files className="w-4 h-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Dupliquer (Ctrl+D)</TooltipContent>
+                <TooltipContent side="bottom" sideOffset={8} className="z-[100] bg-popover/95 backdrop-blur-md border-border shadow-2xl">Dupliquer (Ctrl+D)</TooltipContent>
               </Tooltip>
             )}
             <Tooltip>
@@ -196,7 +196,7 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onTo
                   <ImageIcon className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Exporter en image</TooltipContent>
+              <TooltipContent side="bottom" sideOffset={8}>Exporter en image</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -209,7 +209,7 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onTo
                   <Edit3 className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Modifier</TooltipContent>
+              <TooltipContent side="bottom" sideOffset={8}>Modifier</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -222,7 +222,7 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onTo
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Supprimer</TooltipContent>
+              <TooltipContent side="bottom" sideOffset={8}>Supprimer</TooltipContent>
             </Tooltip>
           </div>
         </div>
