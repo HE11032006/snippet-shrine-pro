@@ -38,17 +38,17 @@ interface NoteCardProps {
 
 export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onToggleSelect, allNotes = [], onNoteClick, settings }: NoteCardProps) {
   const [copied, setCopied] = useState(false);
-  const codeRef = useRef<HTMLDivElement>(null);
+  const noteRef = useRef<HTMLElement>(null);
 
   const handleExportImage = async () => {
-    if (!codeRef.current) return;
+    if (!noteRef.current) return;
     
     try {
-      const dataUrl = await toPng(codeRef.current, {
+      const dataUrl = await toPng(noteRef.current, {
         cacheBust: true,
-        backgroundColor: '#0a0a0c', // Match theme background
+        backgroundColor: '#0d0d0f', // Match card background
         style: {
-          padding: '40px',
+          padding: '24px',
           borderRadius: '16px',
         }
       });
@@ -129,12 +129,23 @@ ${note.code}
   };
 
   const handleExportPDF = () => {
+    if (!noteRef.current) return;
+    
+    // Ajouter la classe de ciblage pour l'impression
+    noteRef.current.classList.add('printing-note');
+    
     if (window.require) {
       const { ipcRenderer } = window.require('electron');
       ipcRenderer.send('print-to-pdf', `${note.title.toLowerCase().replace(/\s+/g, '-')}.pdf`);
       toast({ title: "Export PDF en cours...", description: "Veuillez choisir l'emplacement de sauvegarde." });
+      
+      // Retirer la classe après un court délai pour laisser Electron capturer
+      setTimeout(() => {
+        noteRef.current?.classList.remove('printing-note');
+      }, 1000);
     } else {
       window.print();
+      noteRef.current.classList.remove('printing-note');
     }
   };
 
@@ -208,7 +219,7 @@ ${note.code}
   };
 
   return (
-    <article className={`glass-panel rounded-2xl overflow-hidden animate-slide-up card-hover relative group/card ${isSelected ? 'ring-2 ring-primary' : ''}`}>
+    <article ref={noteRef} className={`glass-panel rounded-2xl overflow-hidden animate-slide-up card-hover relative group/card ${isSelected ? 'ring-2 ring-primary' : ''}`}>
       {/* Selection Checkbox */}
       {onToggleSelect && (
         <div className="absolute top-4 left-4 z-10">
@@ -332,7 +343,7 @@ ${note.code}
 
       {/* Code */}
       {hasCode && (
-        <div ref={codeRef} className="relative group/code bg-[#0d0d0f] rounded-xl overflow-hidden border border-border/40 my-4 mx-5 shadow-2xl">
+        <div className="relative group/code bg-[#0d0d0f] rounded-xl overflow-hidden border border-border/40 my-4 mx-5 shadow-2xl">
           {/* Floating Action Bar - Discrete */}
           <div className="absolute top-3 right-3 z-20 flex gap-1.5 opacity-0 group-hover/code:opacity-100 transition-all duration-200 translate-y-1 group-hover/code:translate-y-0">
             <Tooltip>

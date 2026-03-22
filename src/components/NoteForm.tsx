@@ -7,9 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { NoteTemplates, NoteTemplate } from '@/components/NoteTemplates';
+import CodeMirror from '@uiw/react-codemirror';
+import { vim } from '@replit/codemirror-vim';
+import { oneDark } from '@codemirror/theme-one-dark';
+import { langs } from '@uiw/codemirror-extensions-langs';
 
 interface NoteFormProps {
   note?: Note | null;
@@ -95,6 +100,37 @@ export function NoteForm({ note, categories, existingTags = [], existingSubcateg
   const [previewMode, setPreviewMode] = useState<'write' | 'preview'>('write');
   const [addedCategories, setAddedCategories] = useState<string[]>([]);
   const [addedSubcategories, setAddedSubcategories] = useState<Record<string, string[]>>({});
+  const [isVimMode, setIsVimMode] = useState(() => {
+    return localStorage.getItem('shrine-vim-mode') === 'true';
+  });
+
+  const toggleVimMode = (checked: boolean) => {
+    setIsVimMode(checked);
+    localStorage.setItem('shrine-vim-mode', String(checked));
+    toast({ title: checked ? 'Mode NeoVim activé' : 'Mode NeoVim désactivé' });
+  };
+
+  const getCodeMirrorExtensions = useCallback(() => {
+    const extensions = [];
+    if (isVimMode) {
+      extensions.push(vim({ status: true }));
+    }
+    
+    try {
+      const match = formData.language;
+      const key = match === 'c' || match === 'cpp' ? 'cpp' : 
+                  match === 'csharp' ? 'csharp' :
+                  match === 'objectivec' ? 'objectiveC' : match;
+                  
+      if (langs[key as keyof typeof langs]) {
+        extensions.push(langs[key as keyof typeof langs]());
+      }
+    } catch (e) {
+      // Ignore invalid language keys safely
+    }
+    
+    return extensions;
+  }, [isVimMode, formData.language]);
 
   const allCategories = [...new Set([...DEFAULT_CATEGORIES, ...categories, ...addedCategories])];
   const subcategoriesForCategory = formData.category 
@@ -443,10 +479,16 @@ export function NoteForm({ note, categories, existingTags = [], existingSubcateg
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-semibold">Code <span className="text-muted-foreground font-normal text-xs">(optionnel)</span></Label>
-            <Textarea
-              value={formData.code}
-              onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-semibold">Code <span className="text-muted-foreground font-normal text-xs">(optionnel)</span></Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="vim-mode" className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">Mode NeoVim</Label>
+                <Switch id="vim-mode" checked={isVimMode} onCheckedChange={toggleVimMode} className="scale-75" />
+              </div>
+            </div>
+            
+            <div 
+              className="rounded-xl overflow-hidden border border-border/50 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 transition-all shadow-inner relative"
               onPaste={(e) => {
                 const pastedText = e.clipboardData.getData('text');
                 if (pastedText && (!formData.code || formData.code.length < 10)) {
@@ -460,10 +502,38 @@ export function NoteForm({ note, categories, existingTags = [], existingSubcateg
                   }
                 }
               }}
-              placeholder="Collez votre code ici..."
-              rows={8}
-              className="input-modern font-mono text-sm resize-none"
-            />
+            >
+              <CodeMirror
+                value={formData.code}
+                height="350px"
+                theme={oneDark}
+                extensions={getCodeMirrorExtensions()}
+                onChange={(value) => setFormData(prev => ({ ...prev, code: value }))}
+                className="text-sm font-mono [&_.cm-editor]:outline-none"
+                basicSetup={{
+                  lineNumbers: true,
+                  highlightActiveLineGutter: true,
+                  foldGutter: true,
+                  dropCursor: true,
+                  allowMultipleSelections: true,
+                  indentOnInput: true,
+                  bracketMatching: true,
+                  closeBrackets: true,
+                  autocompletion: true,
+                  rectangularSelection: true,
+                  crosshairCursor: true,
+                  highlightActiveLine: true,
+                  highlightSelectionMatches: true,
+                  closeBracketsKeymap: true,
+                  defaultKeymap: true,
+                  searchKeymap: true,
+                  historyKeymap: true,
+                  foldKeymap: true,
+                  completionKeymap: true,
+                  lintKeymap: true,
+                }}
+              />
+            </div>
           </div>
 
           {/* Tags */}

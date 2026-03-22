@@ -106,6 +106,55 @@
     --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(224 71% 55%));
     --gradient-subtle: linear-gradient(180deg, hsl(224 71% 3%), hsl(224 71% 5%));
   }
+
+  .obsidian-dark {
+    --background: 240 10% 4%;
+    --foreground: 240 5% 90%;
+
+    --card: 240 10% 6%;
+    --card-foreground: 240 5% 90%;
+
+    --popover: 240 10% 8%;
+    --popover-foreground: 240 5% 95%;
+
+    --primary: 250 100% 70%; /* Subtle Purple */
+    --primary-foreground: 240 10% 4%;
+
+    --secondary: 240 6% 15%;
+    --secondary-foreground: 240 5% 90%;
+
+    --muted: 240 6% 8%;
+    --muted-foreground: 240 4% 60%;
+
+    --accent: 240 6% 20%;
+    --accent-foreground: 240 5% 95%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 20% 98%;
+
+    --border: 240 6% 15%;
+    --input: 240 6% 12%;
+    --ring: 250 100% 70%;
+
+    --sidebar-background: 240 10% 3%;
+    --sidebar-foreground: 240 5% 75%;
+    --sidebar-primary: 250 100% 70%;
+    --sidebar-primary-foreground: 240 10% 3%;
+    --sidebar-accent: 240 6% 10%;
+    --sidebar-accent-foreground: 240 5% 95%;
+    --sidebar-border: 240 6% 8%;
+    --sidebar-ring: 250 100% 70%;
+
+    --code-background: 240 10% 2%;
+    --code-border: 240 6% 10%;
+    --tag-background: 240 6% 15%;
+    --tag-foreground: 240 5% 80%;
+    --tag-hover: 240 6% 20%;
+    --success: 142 70% 40%;
+    --success-foreground: 0 0% 100%;
+    --gradient-primary: linear-gradient(135deg, #7c66dc, #917bed);
+    --gradient-subtle: linear-gradient(180deg, hsl(240 10% 4%), hsl(240 10% 6%));
+  }
 }
 
 @layer base {
@@ -125,11 +174,11 @@
 
 @layer components {
   .glass-panel {
-    @apply bg-card/90 backdrop-blur-xl border border-border/60 shadow-xl shadow-primary/5;
+    @apply bg-card/95 backdrop-blur-md border border-border/40 shadow-sm transition-all duration-300;
   }
 
   .code-block {
-    @apply rounded-xl overflow-hidden border-2;
+    @apply rounded-lg overflow-hidden border;
     background: hsl(var(--code-background));
     border-color: hsl(var(--code-border));
   }
@@ -199,7 +248,7 @@
   }
 
   .card-hover {
-    @apply transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1;
+    @apply transition-all duration-300 hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5;
   }
 }
 
@@ -256,5 +305,51 @@
       opacity: 1; 
       transform: scale(1); 
     }
+  }
+}
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  /* Masquer tout sauf la note en cours d'impression */
+  body > * {
+    display: none !important;
+  }
+  
+  .printing-note {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  .printing-note * {
+    visibility: visible !important;
+    color: black !important;
+    border-color: #eee !important;
+  }
+
+  /* Ajustements spécifiques pour le code en impression */
+  .printing-note pre, .printing-note code {
+    background: #f5f5f5 !important;
+    color: black !important;
+    border: 1px solid #ddd !important;
+    white-space: pre-wrap !important;
+  }
+  
+  .printing-note .tag-badge {
+    border: 1px solid #ddd !important;
+    background: transparent !important;
+    color: #666 !important;
   }
 }

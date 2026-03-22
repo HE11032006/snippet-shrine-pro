@@ -47,6 +47,15 @@ const Index = () => {
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isZenMode, setIsZenMode] = useState(false);
+
+  // Apply theme class to html element
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('obsidian-dark');
+    if (settings.theme === 'obsidian-dark') {
+      root.classList.add('obsidian-dark');
+    }
+  }, [settings.theme]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
   const searchInputRef = useRef<HTMLInputElement>(null);

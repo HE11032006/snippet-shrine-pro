@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -116,13 +117,30 @@ export function SettingsDialog({ isOpen, onClose, settings, onUpdateSettings }: 
                     <span>Style du Thème</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <Button variant="outline" className="justify-start gap-2 h-9 border-primary/20 bg-primary/5 text-primary">
-                      <div className="w-3 h-3 rounded-full bg-primary" />
+                    <Button 
+                      variant="outline" 
+                      onClick={() => onUpdateSettings({ ...settings, theme: 'dark' })}
+                      className={cn(
+                        "justify-start gap-2 h-9 border-primary/20",
+                        settings.theme === 'dark' && "bg-primary/5 text-primary border-primary/50 shadow-sm"
+                      )}
+                    >
+                      <div className="w-3 h-3 rounded-full bg-slate-700" />
                       Indigo Slate
                     </Button>
-                    <Button variant="outline" className="justify-start gap-2 h-9 opacity-50 grayscale cursor-not-allowed">
-                      <div className="w-3 h-3 rounded-full bg-rose-500" />
-                      Midnight (Bientôt)
+                    <Button 
+                      variant="outline" 
+                      onClick={() => onUpdateSettings({ ...settings, theme: 'obsidian-dark' })}
+                      className={cn(
+                        "justify-start gap-2 h-9 border-primary/20 transition-all duration-300",
+                        settings.theme === 'obsidian-dark' && "bg-primary/5 text-primary border-primary/50 shadow-sm"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-3 h-3 rounded-full bg-zinc-800 border border-zinc-700",
+                        settings.theme === 'obsidian-dark' && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                      )} />
+                      Obsidian Dark
                     </Button>
                   </div>
               </div>
