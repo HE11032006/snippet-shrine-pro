@@ -67,6 +67,25 @@ export function FullPageEditor({
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [isVimMode, setIsVimMode] = useState(() => localStorage.getItem('shrine-vim-mode') === 'true');
 
+  const [showNewCategory, setShowNewCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState('');
+  const [addedCategories, setAddedCategories] = useState<string[]>([]);
+
+  const [showNewSubcategory, setShowNewSubcategory] = useState(false);
+  const [newSubcategory, setNewSubcategory] = useState('');
+  const [addedSubcategories, setAddedSubcategories] = useState<Record<string, string[]>>({});
+
+  const allCategories = useMemo(() => {
+    return Array.from(new Set([...categories, ...addedCategories]));
+  }, [categories, addedCategories]);
+
+  const subcategoriesForCategory = useMemo(() => {
+    if (!formData.category) return [];
+    const base = existingSubcategories[formData.category] || [];
+    const added = addedSubcategories[formData.category] || [];
+    return Array.from(new Set([...base, ...added]));
+  }, [formData.category, existingSubcategories, addedSubcategories]);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -77,7 +96,7 @@ export function FullPageEditor({
     ],
     content: formData.description,
     onUpdate: ({ editor }) => {
-      setFormData(prev => ({ ...prev, description: editor.storage.markdown.getMarkdown() }));
+      setFormData(prev => ({ ...prev, description: (editor.storage as any).markdown.getMarkdown() }));
       
       // Simple slash command detection
       const text = editor.getText();
@@ -165,19 +184,100 @@ export function FullPageEditor({
     setFormData(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tagToRemove) }));
   };
 
+  const handleAddCategory = (e?: React.MouseEvent | React.KeyboardEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    const trimmed = newCategory.trim();
+    if (trimmed) {
+      setAddedCategories(prev => [...new Set([...prev, trimmed])]);
+      setFormData(prev => ({ ...prev, category: trimmed, subcategory: '' }));
+      setNewCategory('');
+      setShowNewCategory(false);
+    }
+  };
+
+  const handleAddSubcategory = (e?: React.MouseEvent | React.KeyboardEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    const trimmed = newSubcategory.trim();
+    if (trimmed && formData.category) {
+      setAddedSubcategories(prev => ({
+        ...prev,
+        [formData.category]: [...new Set([...(prev[formData.category] || []), trimmed])]
+      }));
+      setFormData(prev => ({ ...prev, subcategory: trimmed }));
+      setNewSubcategory('');
+      setShowNewSubcategory(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-background overflow-y-auto animate-fade-in">
       {/* Top Header / Metadata Bar */}
       <div className="flex items-center justify-between px-8 py-4 border-b border-border/50 bg-muted/20 sticky top-0 z-10 backdrop-blur-md">
         <div className="flex items-center gap-3 flex-wrap">
-          <Select value={formData.category} onValueChange={(val) => setFormData(p => ({...p, category: val}))}>
-            <SelectTrigger className="w-[180px] h-8 text-xs bg-transparent border-dashed">
-              <SelectValue placeholder="Choisir Catégorie..." />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          {/* Category Input/Select */}
+          {showNewCategory ? (
+            <div className="flex items-center gap-1">
+              <Input
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleAddCategory(e);
+                  if (e.key === 'Escape') setShowNewCategory(false);
+                }}
+                placeholder="Nouvelle Catégorie..."
+                className="w-[180px] h-8 text-xs bg-transparent border-dashed"
+                autoFocus
+              />
+              <Button type="button" variant="ghost" size="sm" onClick={handleAddCategory} className="h-8 px-2 text-primary"><Check className="w-3 h-3" /></Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setShowNewCategory(false)} className="h-8 px-2 text-muted-foreground"><X className="w-3 h-3" /></Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1">
+              <Select value={formData.category} onValueChange={(val) => setFormData(p => ({...p, category: val, subcategory: ''}))}>
+                <SelectTrigger className="w-[180px] h-8 text-xs bg-transparent border-dashed">
+                  <SelectValue placeholder="Choisir Catégorie..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {allCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setShowNewCategory(true)} className="h-8 px-2 text-muted-foreground hover:text-primary"><Plus className="w-3 h-3" /></Button>
+            </div>
+          )}
+
+          {/* Subcategory Input/Select */}
+          {showNewSubcategory ? (
+            <div className="flex items-center gap-1">
+              <Input
+                value={newSubcategory}
+                onChange={(e) => setNewSubcategory(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleAddSubcategory(e);
+                  if (e.key === 'Escape') setShowNewSubcategory(false);
+                }}
+                placeholder="Nouvelle Sous-Catégorie..."
+                className="w-[180px] h-8 text-xs bg-transparent border-dashed"
+                autoFocus
+              />
+              <Button type="button" variant="ghost" size="sm" onClick={handleAddSubcategory} className="h-8 px-2 text-primary"><Check className="w-3 h-3" /></Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setShowNewSubcategory(false)} className="h-8 px-2 text-muted-foreground"><X className="w-3 h-3" /></Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1">
+              <Select value={formData.subcategory || '_none'} onValueChange={(val) => setFormData(p => ({...p, subcategory: val === '_none' ? '' : val}))} disabled={!formData.category}>
+                <SelectTrigger className="w-[180px] h-8 text-xs bg-transparent border-dashed">
+                  <SelectValue placeholder={formData.category ? "Sous-catégorie..." : "Sous-catégorie"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">Aucune</SelectItem>
+                  {subcategoriesForCategory.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setShowNewSubcategory(true)} disabled={!formData.category} className="h-8 px-2 text-muted-foreground hover:text-primary"><Plus className="w-3 h-3" /></Button>
+            </div>
+          )}
           
           <Select value={formData.language} onValueChange={(val) => setFormData(p => ({...p, language: val}))}>
             <SelectTrigger className="w-[140px] h-8 text-xs bg-transparent border-dashed">
