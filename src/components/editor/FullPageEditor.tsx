@@ -3,10 +3,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Markdown } from 'tiptap-markdown';
-import CodeMirror from '@uiw/react-codemirror';
-import { vim } from '@replit/codemirror-vim';
-import { langs } from '@uiw/codemirror-extensions-langs';
-import { oneDark } from '@codemirror/theme-one-dark';
+import { CustomCodeBlock } from './extensions/CodeBlockExtension';
 import { Note, NoteFormData } from '@/types/note';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -52,20 +49,24 @@ export function FullPageEditor({
   onSave,
   onCancel
 }: FullPageEditorProps) {
-  const [formData, setFormData] = useState<NoteFormData>({
-    title: note?.title || '',
-    category: note?.category || '',
-    subcategory: note?.subcategory || '',
-    description: note?.description || '',
-    code: note?.code || '',
-    language: note?.language || 'javascript',
-    tags: note?.tags || [],
+  const [formData, setFormData] = useState<NoteFormData>(() => {
+    let initialDesc = note?.description || '';
+    if (note?.code) {
+      initialDesc += `\n\n\`\`\`${note?.language || 'javascript'}\n${note.code}\n\`\`\`\n`;
+    }
+    return {
+      title: note?.title || '',
+      category: note?.category || '',
+      subcategory: note?.subcategory || '',
+      description: initialDesc,
+      code: '',
+      language: note?.language || 'javascript',
+      tags: note?.tags || [],
+    };
   });
   
   const [tagInput, setTagInput] = useState('');
-  const [showCode, setShowCode] = useState(!!note?.code);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
-  const [isVimMode, setIsVimMode] = useState(() => localStorage.getItem('shrine-vim-mode') === 'true');
 
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategory, setNewCategory] = useState('');
@@ -88,7 +89,10 @@ export function FullPageEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        codeBlock: false,
+      }),
+      CustomCodeBlock,
       Markdown,
       Placeholder.configure({
         placeholder: "Commencez à écrire... ou tapez '/' pour les commandes, ou appuyez sur entrée.",
@@ -119,24 +123,7 @@ export function FullPageEditor({
     },
   });
 
-  const toggleVimMode = (checked: boolean) => {
-    setIsVimMode(checked);
-    localStorage.setItem('shrine-vim-mode', String(checked));
-    toast({ title: checked ? 'Mode NeoVim activé' : 'Mode NeoVim désactivé' });
-  };
-
-  const getCodeMirrorExtensions = useCallback(() => {
-    const extensions = [];
-    if (isVimMode) {
-      extensions.push(vim({ status: true }));
-    }
-    try {
-      if (langs[formData.language as keyof typeof langs]) {
-        extensions.push(langs[formData.language as keyof typeof langs]());
-      }
-    } catch { /* ignore */ }
-    return extensions;
-  }, [isVimMode, formData.language]);
+  // Removed toggleVimMode and getCodeMirrorExtensions as they are no longer needed.
 
   const insertTemplate = (templateId: string) => {
     const template = NOTE_TEMPLATES.find(t => t.id === templateId);
@@ -152,8 +139,8 @@ export function FullPageEditor({
   const handleShowCode = () => {
     if (editor) {
       editor.commands.deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from });
+      editor.chain().focus().toggleCodeBlock().run();
     }
-    setShowCode(true);
     setShowSlashMenu(false);
   };
 
@@ -359,53 +346,13 @@ export function FullPageEditor({
           <EditorContent editor={editor} onClick={() => setShowSlashMenu(false)} />
         </div>
 
-        {/* Dedicated CodeBlock (CodeMirror) */}
-        {showCode && (
-          <div className="mt-8 animate-slide-up">
-            <div className="flex items-center justify-between mb-2 px-1">
-              <span className="text-sm font-semibold flex items-center gap-2">
-                <Code2 className="w-4 h-4 text-primary" />
-                Bloc de Code ({formData.language})
-              </span>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5">
-                  <Label htmlFor="vim-mode-editor" className="text-xs text-muted-foreground cursor-pointer">NeoVim</Label>
-                  <Switch id="vim-mode-editor" checked={isVimMode} onCheckedChange={toggleVimMode} className="scale-75" />
-                </div>
-                <button onClick={() => setShowCode(false)} className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1">
-                  <X className="w-3 h-3" /> Fermer le bloc
-                </button>
-              </div>
-            </div>
-            <div className="rounded-xl overflow-hidden border border-border/50 shadow-inner">
-              <CodeMirror
-                value={formData.code}
-                height="auto"
-                minHeight="200px"
-                theme={oneDark}
-                extensions={getCodeMirrorExtensions()}
-                onChange={(val) => setFormData(p => ({...p, code: val}))}
-                className="text-sm font-mono [&_.cm-editor]:outline-none"
-                basicSetup={{
-                  lineNumbers: true,
-                  highlightActiveLineGutter: true,
-                  bracketMatching: true,
-                  autocompletion: true,
-                }}
-              />
-            </div>
-          </div>
-        )}
-        
-        {!showCode && (
-          <button 
-            onClick={() => setShowCode(true)}
-            className="w-full py-4 mt-8 border border-dashed border-border/50 rounded-xl text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 group"
-          >
-            <Code2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            Ajouter un bloc de code
-          </button>
-        )}
+        <button 
+          onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
+          className="w-full py-4 mt-8 border border-dashed border-border/50 rounded-xl text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 group"
+        >
+          <Code2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
+          Ajouter un bloc de code à la fin
+        </button>
 
       </div>
     </div>
