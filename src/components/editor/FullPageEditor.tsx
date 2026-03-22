@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useEditor, EditorContent, FloatingMenu, BubbleMenu } from '@tiptap/react';
+import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import CodeMirror from '@uiw/react-codemirror';
@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { Tag, Plus, X, Command, Code2, BookOpen, Bug, Check } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { NOTE_TEMPLATES } from '@/components/NoteTemplates';
@@ -62,6 +63,7 @@ export function FullPageEditor({
   
   const [tagInput, setTagInput] = useState('');
   const [showCode, setShowCode] = useState(!!note?.code);
+  const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [isVimMode, setIsVimMode] = useState(() => localStorage.getItem('shrine-vim-mode') === 'true');
 
   const editor = useEditor({
@@ -77,8 +79,16 @@ export function FullPageEditor({
       
       // Simple slash command detection
       const text = editor.getText();
-      if (text.endsWith('/')) {
-         // Could trigger a custom popover instead of FloatingMenu here if needed
+      const textBeforeCursor = editor.state.doc.textBetween(
+        Math.max(0, editor.state.selection.from - 1), 
+        editor.state.selection.from, 
+        '\n'
+      );
+      
+      if (textBeforeCursor === '/') {
+        setShowSlashMenu(true);
+      } else {
+        setShowSlashMenu(false);
       }
     },
     editorProps: {
@@ -110,10 +120,20 @@ export function FullPageEditor({
   const insertTemplate = (templateId: string) => {
     const template = NOTE_TEMPLATES.find(t => t.id === templateId);
     if (template && editor) {
-      editor.commands.clearContent();
+      // Retirer le '/' qui a déclenché le menu
+      editor.commands.deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from });
       editor.commands.insertContent(template.data.description || '');
       toast({ title: 'Template injecté', description: template.name });
+      setShowSlashMenu(false);
     }
+  };
+
+  const handleShowCode = () => {
+    if (editor) {
+      editor.commands.deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from });
+    }
+    setShowCode(true);
+    setShowSlashMenu(false);
   };
 
   const handleSave = () => {
@@ -215,34 +235,26 @@ export function FullPageEditor({
 
         {/* TipTap Editor */}
         <div className="min-h-[300px] mb-8 relative">
-          {editor && (
-            <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }}>
-              <div className="flex items-center gap-1 p-1 bg-popover border border-border rounded-lg shadow-xl">
-                <button onClick={() => editor.chain().focus().toggleBold().run()} className={`p-1.5 rounded hover:bg-muted ${editor.isActive('bold') ? 'bg-muted text-primary' : ''}`}><b>B</b></button>
-                <button onClick={() => editor.chain().focus().toggleItalic().run()} className={`p-1.5 rounded hover:bg-muted ${editor.isActive('italic') ? 'bg-muted text-primary' : ''}`}><i>I</i></button>
-                <button onClick={() => editor.chain().focus().toggleCode().run()} className={`p-1.5 rounded hover:bg-muted ${editor.isActive('code') ? 'bg-muted text-primary' : ''}`}><Code2 className="w-4 h-4" /></button>
+          
+          {showSlashMenu && (
+            <div className="absolute z-50 left-0 mt-8 flex flex-col p-1.5 bg-card/95 backdrop-blur-md border border-border/50 rounded-xl shadow-2xl w-56 animate-scale-in">
+              <div className="flex justify-between items-center px-2 py-1.5">
+                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Slash Commands</span>
+                <button onClick={() => setShowSlashMenu(false)} className="text-muted-foreground hover:text-foreground"><X className="w-3 h-3" /></button>
               </div>
-            </BubbleMenu>
+              <button onClick={handleShowCode} className="flex items-center gap-2 px-2 py-2 text-sm hover:bg-muted rounded-lg text-left transition-colors">
+                <Code2 className="w-4 h-4 text-emerald-500" /> Ajouter un bloc de Code
+              </button>
+              <button onClick={() => insertTemplate('daily-log')} className="flex items-center gap-2 px-2 py-2 text-sm hover:bg-muted rounded-lg text-left transition-colors">
+                <BookOpen className="w-4 h-4 text-blue-500" /> Insérer Daily Log
+              </button>
+              <button onClick={() => insertTemplate('bug-fix')} className="flex items-center gap-2 px-2 py-2 text-sm hover:bg-muted rounded-lg text-left transition-colors">
+                <Bug className="w-4 h-4 text-rose-500" /> Insérer Rapport de Bug
+              </button>
+            </div>
           )}
 
-          {editor && (
-            <FloatingMenu editor={editor} tippyOptions={{ duration: 100, placement: 'right' }}>
-              <div className="flex flex-col p-1.5 bg-card/95 backdrop-blur-md border border-border/50 rounded-xl shadow-2xl w-56 animate-scale-in">
-                <span className="text-[10px] uppercase font-bold text-muted-foreground px-2 py-1.5 tracking-wider">Slash Commands</span>
-                <button onClick={() => setShowCode(true)} className="flex items-center gap-2 px-2 py-2 text-sm hover:bg-muted rounded-lg text-left transition-colors">
-                  <Code2 className="w-4 h-4 text-emerald-500" /> Ajouter un bloc de Code
-                </button>
-                <button onClick={() => insertTemplate('daily-log')} className="flex items-center gap-2 px-2 py-2 text-sm hover:bg-muted rounded-lg text-left transition-colors">
-                  <BookOpen className="w-4 h-4 text-blue-500" /> Insérer Daily Log
-                </button>
-                <button onClick={() => insertTemplate('bug-fix')} className="flex items-center gap-2 px-2 py-2 text-sm hover:bg-muted rounded-lg text-left transition-colors">
-                  <Bug className="w-4 h-4 text-rose-500" /> Insérer Rapport de Bug
-                </button>
-              </div>
-            </FloatingMenu>
-          )}
-
-          <EditorContent editor={editor} />
+          <EditorContent editor={editor} onClick={() => setShowSlashMenu(false)} />
         </div>
 
         {/* Dedicated CodeBlock (CodeMirror) */}
