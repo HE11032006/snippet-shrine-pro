@@ -1,4 +1,4 @@
-import { Edit3, Trash2, Copy, Check, Files, Sparkles, Share2, Wrench, Link2, ArrowUpRight, ChevronRight, ExternalLink, Star, Clock, Tag, FileCode2, MoreVertical, Maximize2, Download, Image as ImageIcon } from 'lucide-react';
+import { Edit3, Trash2, Copy, Check, Files, Sparkles, Share2, Wrench, Link2, ArrowUpRight, ChevronRight, ExternalLink, Star, Clock, Tag, FileCode2, MoreVertical, Maximize2, Download, Image as ImageIcon, Layout } from 'lucide-react';
 import { useState, useMemo, useRef } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -12,6 +12,13 @@ import { parseNoteLinks } from '@/components/NoteLink';
 import { LanguageIcon } from './LanguageIcon';
 import { cn } from '@/lib/utils';
 import { toPng } from 'html-to-image';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
 
 interface NoteCardProps {
   note: Note;
@@ -62,6 +69,72 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onTo
         title: "Erreur d'export",
         description: "Impossible de générer l'image.",
       });
+    }
+  };
+
+  const handleExportMarkdown = () => {
+    const content = `---
+title: ${note.title}
+category: ${note.category}
+tags: ${note.tags.join(', ')}
+date: ${note.updatedAt}
+---
+
+${note.description}
+
+\`\`\`${note.language}
+${note.code}
+\`\`\`
+`;
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${note.title.toLowerCase().replace(/\s+/g, '-')}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Export MD réussi" });
+  };
+
+  const handleExportHTML = () => {
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${note.title}</title>
+  <style>
+    body { font-family: sans-serif; padding: 40px; background: #0a0a0c; color: #fff; line-height: 1.6; }
+    h1 { color: #8b5cf6; }
+    pre { background: #1a1a1c; padding: 20px; border-radius: 8px; border: 1px solid #333; overflow-x: auto; }
+    code { font-family: monospace; }
+    .tags { color: #666; font-size: 0.8em; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <h1>${note.title}</h1>
+  <div class="tags">catégorie: ${note.category} | tags: ${note.tags.join(', ')}</div>
+  <div>${note.description.replace(/\n/g, '<br>')}</div>
+  <pre><code>${note.code.replace(/</g, '&lt;')}</code></pre>
+</body>
+</html>`;
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${note.title.toLowerCase().replace(/\s+/g, '-')}.html`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Export HTML réussi" });
+  };
+
+  const handleExportPDF = () => {
+    if (window.require) {
+      const { ipcRenderer } = window.require('electron');
+      ipcRenderer.send('print-to-pdf', `${note.title.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+      toast({ title: "Export PDF en cours...", description: "Veuillez choisir l'emplacement de sauvegarde." });
+    } else {
+      window.print();
     }
   };
 
@@ -185,19 +258,41 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onTo
                 <TooltipContent side="bottom" sideOffset={8} className="z-[100] bg-popover/95 backdrop-blur-md border-border shadow-2xl">Dupliquer (Ctrl+D)</TooltipContent>
               </Tooltip>
             )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleExportImage}
-                  className="h-9 w-9 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10"
-                >
-                  <ImageIcon className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={8}>Exporter en image</TooltipContent>
-            </Tooltip>
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10"
+                    >
+                      <Download className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8}>Exporter le snippet</TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent align="end" className="w-48 rounded-xl p-1">
+                <DropdownMenuItem onClick={handleExportMarkdown} className="gap-2 p-2.5 rounded-lg cursor-pointer">
+                  <FileCode2 className="w-4 h-4 text-blue-500" />
+                  Exporter en Markdown
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportHTML} className="gap-2 p-2.5 rounded-lg cursor-pointer">
+                  <Layout className="w-4 h-4 text-orange-500" />
+                  Exporter en HTML
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPDF} className="gap-2 p-2.5 rounded-lg cursor-pointer">
+                  <Download className="w-4 h-4 text-red-500" />
+                  Exporter en PDF
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleExportImage} className="gap-2 p-2.5 rounded-lg cursor-pointer">
+                  <ImageIcon className="w-4 h-4 text-emerald-500" />
+                  Capturer en PNG
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

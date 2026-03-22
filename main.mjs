@@ -1,4 +1,5 @@
-import { app, BrowserWindow, globalShortcut, ipcMain } from "electron";
+import { app, BrowserWindow, globalShortcut, ipcMain, dialog, shell } from "electron";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -54,6 +55,34 @@ app.whenReady().then(() => {
 app.on('will-quit', () => {
   // Unregister all shortcuts
   globalShortcut.unregisterAll();
+});
+
+// IPC Handler for PDF Export
+ipcMain.on('print-to-pdf', async (event, filename) => {
+  const window = BrowserWindow.fromWebContents(event.sender);
+  
+  const { filePath } = await dialog.showSaveDialog(window, {
+    title: 'Exporter en PDF',
+    defaultPath: filename,
+    filters: [{ name: 'Adobe PDF', extensions: ['pdf'] }]
+  });
+
+  if (filePath) {
+    try {
+      const data = await window.webContents.printToPDF({
+        printBackground: true,
+        marginsType: 1, // Minimum margins
+      });
+      fs.writeFileSync(filePath, data);
+      shell.openPath(filePath);
+      event.reply('print-to-pdf-completed', true);
+    } catch (error) {
+      console.error('Failed to write PDF:', error);
+      event.reply('print-to-pdf-completed', false);
+    }
+  } else {
+    event.reply('print-to-pdf-completed', false);
+  }
 });
 
 app.on('window-all-closed', () => {
