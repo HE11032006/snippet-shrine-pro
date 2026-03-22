@@ -153,7 +153,7 @@ export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onTo
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-2 flex-wrap">
               <div className="flex items-center gap-1.5 tag-badge">
-                <LanguageIcon language={note.language} className="w-3.5 h-3.5" />
+                <LanguageIcon language={note.language} className="w-4.5 h-4.5" />
                 {note.category}
               </div>
               {note.subcategory && (
