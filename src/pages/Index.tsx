@@ -3,7 +3,8 @@ import { Plus, Maximize2 } from 'lucide-react';
 import { useNotes } from '@/hooks/useNotes';
 import { Note, NoteFormData } from '@/types/note';
 import { Sidebar } from '@/components/Sidebar';
-import { NoteForm } from '@/components/NoteForm';
+// import { NoteForm } from '@/components/NoteForm'; // Remplacé par FullPageEditor
+import { FullPageEditor } from '@/components/editor/FullPageEditor';
 import { SelectionBar } from '@/components/SelectionBar';
 import { AdvancedSearchFilters, DEFAULT_FILTERS } from '@/components/AdvancedSearch';
 import { CommandPalette } from '@/components/CommandPalette';
@@ -500,14 +501,25 @@ ${note.code}
                 <Maximize2 className="w-4 h-4" />
               </Button>
             )}
-            <NoteDetail
-              note={notes.find(n => n.id === selectedNoteId) || null}
-              onEdit={handleEditNote}
-              onDelete={handleDeleteNote}
-              onDuplicate={handleDuplicateNote}
-              onToggleStar={toggleStar}
-              settings={settings}
-            />
+            {isFormOpen ? (
+              <FullPageEditor
+                note={editingNote}
+                categories={categories}
+                existingTags={allTags}
+                existingSubcategories={allSubcategories}
+                onSave={handleSaveNote}
+                onCancel={handleCancelForm}
+              />
+            ) : (
+              <NoteDetail
+                note={notes.find(n => n.id === selectedNoteId) || null}
+                onEdit={handleEditNote}
+                onDelete={handleDeleteNote}
+                onDuplicate={handleDuplicateNote}
+                onToggleStar={toggleStar}
+                settings={settings}
+              />
+            )}
           </main>
         </Panel>
       </PanelGroup>
@@ -534,20 +546,6 @@ ${note.code}
             </kbd>
           </Button>
         </div>
-      )}
-
-      {/* Note Form Modal */}
-      {isFormOpen && (
-        <NoteForm
-          note={editingNote}
-          categories={categories}
-          existingTags={allTags}
-          existingSubcategories={allSubcategories}
-          onSave={handleSaveNote}
-          onCancel={handleCancelForm}
-          onNewNote={handleNewNote}
-          initialTemplate={initialTemplate}
-        />
       )}
 
       {/* Command Palette */}
