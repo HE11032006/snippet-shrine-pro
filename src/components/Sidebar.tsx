@@ -25,6 +25,7 @@ import { ExportImport } from './ExportImport';
 import { ThemeToggle } from './ThemeToggle';
 import { TagFilter } from './TagFilter';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { LanguageIcon } from './LanguageIcon';
 
 interface SidebarProps {
   categories: string[];
@@ -69,24 +70,29 @@ function SmartFolders({ collapsed, selectedCategory, onSelectCategory, notes }: 
     <div className="space-y-1 mb-6">
       {!collapsed && <h3 className="px-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 mb-2">Recherches</h3>}
       {folders.map(folder => (
-        <button
-          key={folder.id}
-          onClick={() => onSelectCategory(selectedCategory === folder.id ? null : folder.id)}
-          className={cn(
-            "w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all group",
-            selectedCategory === folder.id 
-              ? "bg-primary/10 text-primary" 
-              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-          )}
-        >
-          <folder.icon className={cn("w-4 h-4", selectedCategory === folder.id ? folder.color : "opacity-60")} />
-          {!collapsed && (
-            <>
-              <span className="flex-1 text-sm font-medium text-left">{folder.label}</span>
-              <span className="text-[10px] font-bold opacity-40">{folder.count}</span>
-            </>
-          )}
-        </button>
+        <Tooltip key={folder.id} delayDuration={0}>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => onSelectCategory(selectedCategory === folder.id ? null : folder.id)}
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all group",
+                selectedCategory === folder.id 
+                  ? "bg-primary/10 text-primary" 
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                collapsed && "justify-center px-0 h-10 w-10 mx-auto"
+              )}
+            >
+              <folder.icon className={cn(collapsed ? "w-5 h-5" : "w-4 h-4", selectedCategory === folder.id ? folder.color : "opacity-60")} />
+              {!collapsed && (
+                <>
+                  <span className="flex-1 text-sm font-medium text-left">{folder.label}</span>
+                  <span className="text-[10px] font-bold opacity-40">{folder.count}</span>
+                </>
+              )}
+            </button>
+          </TooltipTrigger>
+          {collapsed && <TooltipContent side="right">{folder.label} ({folder.count})</TooltipContent>}
+        </Tooltip>
       ))}
     </div>
   );
@@ -137,38 +143,47 @@ function CategoryList({
 
         return (
           <div key={category} className="space-y-1">
-            <button
-              onClick={() => {
-                if (collapsed) {
-                   onSelectCategory(isSelected ? null : category);
-                } else {
-                   toggleCategory(category);
-                   if (!isSelected) onSelectCategory(category);
-                }
-              }}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, category)}
-              className={cn(
-                "w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all group",
-                isSelected && !selectedSubcategory 
-                  ? "bg-primary/10 text-primary border-l-2 border-primary rounded-l-none" 
-                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                "drop-target:bg-primary/20" // Placeholder for visual feedback
-              )}
-            >
-              <FolderOpen className={cn("w-4 h-4", isSelected ? "text-primary" : "opacity-60")} />
-              {!collapsed && (
-                <>
-                  <span className="flex-1 text-sm font-medium text-left truncate">{category}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold opacity-40">{count}</span>
-                    {subcategories.length > 0 && (
-                      <ChevronDown className={cn("w-3 h-3 transition-transform", isExpanded ? "rotate-180" : "")} />
-                    )}
-                  </div>
-                </>
-              )}
-            </button>
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => {
+                    if (collapsed) {
+                       onSelectCategory(isSelected ? null : category);
+                    } else {
+                       toggleCategory(category);
+                       if (!isSelected) onSelectCategory(category);
+                    }
+                  }}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, category)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all group",
+                    isSelected && !selectedSubcategory 
+                      ? "bg-primary/10 text-primary border-l-2 border-primary rounded-l-none" 
+                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                    collapsed && "justify-center px-0 h-10 w-10 mx-auto",
+                    "drop-target:bg-primary/20"
+                  )}
+                >
+                  <LanguageIcon 
+                    language={category} 
+                    className={cn(collapsed ? "w-5 h-5" : "w-4 h-4", isSelected ? "text-primary" : "opacity-60")} 
+                  />
+                  {!collapsed && (
+                    <>
+                      <span className="flex-1 text-sm font-medium text-left truncate">{category}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold opacity-40">{count}</span>
+                        {subcategories.length > 0 && (
+                          <ChevronDown className={cn("w-3 h-3 transition-transform", isExpanded ? "rotate-180" : "")} />
+                        )}
+                      </div>
+                    </>
+                  )}
+                </button>
+              </TooltipTrigger>
+              {collapsed && <TooltipContent side="right">{category} ({count})</TooltipContent>}
+            </Tooltip>
             
             {!collapsed && isExpanded && subcategories.map(sub => (
               <button
@@ -245,14 +260,14 @@ export function Sidebar({
              <span className="font-display font-black text-xl tracking-tighter text-primary">HE</span>
           </div>
         ) : (
-           <Button 
+            <Button 
             variant="ghost" 
             size="icon" 
             onClick={onToggleCollapse}
             className="h-8 w-8 text-muted-foreground hover:text-foreground"
-           >
-             <ChevronLeft className="w-4 h-4" />
-           </Button>
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
         )}
       </div>
 
