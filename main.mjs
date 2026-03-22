@@ -1,5 +1,8 @@
 import { app, BrowserWindow, globalShortcut, ipcMain, dialog, shell } from "electron";
 import fs from "fs";
+import { exec } from "child_process";
+import util from "util";
+const execPromise = util.promisify(exec);
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -83,6 +86,29 @@ ipcMain.on('print-to-pdf', async (event, filename) => {
   } else {
     event.reply('print-to-pdf-completed', false);
   }
+});
+
+// IPC Handler for Git Operations
+ipcMain.handle('git-command', async (event, { command, repoPath }) => {
+  if (!repoPath || !fs.existsSync(repoPath)) {
+    return { success: false, error: 'Répertoire invalide' };
+  }
+
+  try {
+    const { stdout, stderr } = await execPromise(command, { cwd: repoPath });
+    return { success: true, stdout, stderr };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Select Directory for Git
+ipcMain.handle('select-directory', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory', 'createDirectory']
+  });
+  if (result.canceled) return null;
+  return result.filePaths[0];
 });
 
 app.on('window-all-closed', () => {
