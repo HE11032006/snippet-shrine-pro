@@ -84,7 +84,7 @@ function SmartFolders({ collapsed, selectedCategory, onSelectCategory, notes }: 
                 collapsed && "justify-center px-0 h-10 w-10 mx-auto"
               )}
             >
-              <folder.icon className={cn(collapsed ? "w-5 h-5" : "w-4 h-4", selectedCategory === folder.id ? folder.color : "opacity-60")} />
+              <folder.icon className={cn(collapsed ? "w-6 h-6" : "w-4 h-4", selectedCategory === folder.id ? folder.color : "opacity-60")} />
               {!collapsed && (
                 <>
                   <span className="flex-1 text-sm font-medium text-left">{folder.label}</span>
@@ -169,7 +169,7 @@ function CategoryList({
                 >
                   <LanguageIcon 
                     language={category} 
-                    className={cn(collapsed ? "w-5 h-5" : "w-4 h-4", isSelected ? "text-primary" : "opacity-60")} 
+                    className={cn(collapsed ? "w-6 h-6" : "w-4 h-4", isSelected ? "text-primary" : "opacity-60")} 
                   />
                   {!collapsed && (
                     <>
@@ -321,7 +321,7 @@ export function Sidebar({
                   collapsed && "justify-center px-0 h-10 w-10 mx-auto"
                 )}
               >
-                <BookOpen className={cn(collapsed ? "w-5 h-5" : "w-4 h-4", selectedCategory === 'Journal' ? "text-emerald-500" : "opacity-60")} />
+                <BookOpen className={cn(collapsed ? "w-6 h-6" : "w-4 h-4", selectedCategory === 'Journal' ? "text-emerald-500" : "opacity-60")} />
                 {!collapsed && (
                   <span className="flex-1 text-sm font-medium text-left">Journal de Bord</span>
                 )}

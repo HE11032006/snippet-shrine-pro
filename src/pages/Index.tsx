@@ -505,10 +505,15 @@ ${note.code}
               <FullPageEditor
                 note={editingNote}
                 categories={categories}
+                notes={notes}
                 existingTags={allTags}
                 existingSubcategories={allSubcategories}
                 onSave={handleSaveNote}
                 onCancel={handleCancelForm}
+                onSelectNoteByTitle={(title) => {
+                  const found = notes.find(n => n.title.toLowerCase() === title.toLowerCase());
+                  if (found) setSelectedNoteId(found.id);
+                }}
               />
             ) : (
               <NoteDetail

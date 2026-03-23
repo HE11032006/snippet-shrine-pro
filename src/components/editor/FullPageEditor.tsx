@@ -4,13 +4,14 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Markdown } from 'tiptap-markdown';
 import { CustomCodeBlock } from './extensions/CodeBlockExtension';
+import { WikiLink } from './extensions/WikiLinkExtension';
 import { Note, NoteFormData } from '@/types/note';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Tag, Plus, X, Command, Code2, BookOpen, Bug, Check } from 'lucide-react';
+import { Tag, Plus, X, Command, Code2, BookOpen, Bug, Check, Link2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { NOTE_TEMPLATES } from '@/components/NoteTemplates';
 
@@ -37,8 +38,10 @@ interface FullPageEditorProps {
   categories: string[];
   existingTags?: string[];
   existingSubcategories?: Record<string, string[]>;
+  notes: Note[];
   onSave: (data: NoteFormData) => void;
   onCancel: () => void;
+  onSelectNoteByTitle?: (title: string) => void;
 }
 
 export function FullPageEditor({
@@ -46,8 +49,10 @@ export function FullPageEditor({
   categories,
   existingTags = [],
   existingSubcategories = {},
+  notes = [],
   onSave,
-  onCancel
+  onCancel,
+  onSelectNoteByTitle
 }: FullPageEditorProps) {
   const [formData, setFormData] = useState<NoteFormData>(() => {
     let initialDesc = note?.description || '';
@@ -67,6 +72,14 @@ export function FullPageEditor({
   
   const [tagInput, setTagInput] = useState('');
   const [showSlashMenu, setShowSlashMenu] = useState(false);
+
+  const backlinks = useMemo(() => {
+    if (!note) return [];
+    return notes.filter(n => 
+      n.id !== note.id && 
+      (n.description.includes(`[[${note.title}]]`) || n.description.includes(`data-title="${note.title}"`))
+    );
+  }, [note, notes]);
 
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategory, setNewCategory] = useState('');
@@ -93,6 +106,7 @@ export function FullPageEditor({
         codeBlock: false,
       }),
       CustomCodeBlock,
+      WikiLink,
       Markdown,
       Placeholder.configure({
         placeholder: "Commencez à écrire... ou tapez '/' pour les commandes, ou appuyez sur entrée.",
@@ -119,6 +133,19 @@ export function FullPageEditor({
     editorProps: {
       attributes: {
         class: 'prose prose-sm sm:prose-base prose-invert max-w-none focus:outline-none min-h-[200px]',
+      },
+      handleDOMEvents: {
+        click: (view, event) => {
+          const target = event.target as HTMLElement;
+          if (target.hasAttribute('data-wiki-link')) {
+            const title = target.getAttribute('data-title');
+            if (title && onSelectNoteByTitle) {
+              onSelectNoteByTitle(title);
+              return true;
+            }
+          }
+          return false;
+        },
       },
     },
   });
@@ -353,6 +380,28 @@ export function FullPageEditor({
           <Code2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
           Ajouter un bloc de code à la fin
         </button>
+
+        {/* Backlinks Section */}
+        {backlinks.length > 0 && (
+          <div className="mt-12 pt-6 border-t border-border/30 opacity-60 hover:opacity-100 transition-opacity">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+              <Link2 className="w-3 h-3" />
+              Liens entrants ({backlinks.length})
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {backlinks.map(bn => (
+                <button
+                  key={bn.id}
+                  onClick={() => onSelectNoteByTitle?.(bn.title)}
+                  className="flex flex-col p-3 rounded-lg border border-border/50 hover:border-primary/30 hover:bg-primary/5 text-left transition-all group"
+                >
+                  <span className="text-sm font-medium group-hover:text-primary transition-colors line-clamp-1">{bn.title}</span>
+                  <span className="text-[10px] text-muted-foreground">{bn.category}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
