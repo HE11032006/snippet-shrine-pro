@@ -16,6 +16,7 @@ import { toast } from '@/hooks/use-toast';
 import { NoteTemplate, NOTE_TEMPLATES } from '@/components/NoteTemplates';
 import { Button } from '@/components/ui/button';
 import { SettingsDialog } from '@/components/SettingsDialog';
+import { GraphView } from '@/components/GraphView';
 import { 
   PanelGroup, 
   Panel, 
@@ -48,6 +49,7 @@ const Index = () => {
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isZenMode, setIsZenMode] = useState(false);
+  const [isGraphOpen, setIsGraphOpen] = useState(false);
 
   // Apply theme class to html element
   useEffect(() => {
@@ -440,6 +442,7 @@ ${note.code}
             collapsed={isSidebarCollapsed}
             onToggleCollapse={handleToggleSidebar}
             onNewDailyLog={handleNewDailyLog}
+            onOpenGraph={() => setIsGraphOpen(true)}
           />
         </aside>
       )}
@@ -554,13 +557,24 @@ ${note.code}
       )}
 
       {/* Command Palette */}
-      <CommandPalette
-        isOpen={isPaletteOpen}
-        onClose={() => setIsPaletteOpen(false)}
+      <CommandPalette 
+        isOpen={isPaletteOpen} 
+        onClose={() => setIsPaletteOpen(false)} 
         notes={notes}
         onSelectNote={handleNoteClick}
         onNewNote={handleNewNote}
         onToggleTheme={toggleTheme}
+      />
+      
+      {/* Graph View Overlay */}
+      <GraphView 
+        notes={notes}
+        isOpen={isGraphOpen}
+        onClose={() => setIsGraphOpen(false)}
+        onSelectNote={(id) => {
+          setSelectedNoteId(id);
+          setIsGraphOpen(false);
+        }}
       />
     </div>
   );
