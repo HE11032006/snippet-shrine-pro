@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
+import Underline from '@tiptap/extension-underline';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
 import { Markdown } from 'tiptap-markdown';
 import { CustomCodeBlock } from './extensions/CodeBlockExtension';
 import { WikiLink } from './extensions/WikiLinkExtension';
@@ -11,7 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Tag, Plus, X, Command, Code2, BookOpen, Bug, Check, Link2 } from 'lucide-react';
+import { 
+  Tag, Plus, X, Command, Code2, BookOpen, Bug, Check, Link2,
+  Heading1, Heading2, Heading3, List, ListOrdered, Quote, Minus, CheckSquare, Type
+} from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { NOTE_TEMPLATES } from '@/components/NoteTemplates';
 
@@ -72,6 +78,7 @@ export function FullPageEditor({
   
   const [tagInput, setTagInput] = useState('');
   const [showSlashMenu, setShowSlashMenu] = useState(false);
+  const [slashQuery, setSlashQuery] = useState('');
 
   const backlinks = useMemo(() => {
     if (!note) return [];
@@ -108,6 +115,11 @@ export function FullPageEditor({
       CustomCodeBlock,
       WikiLink,
       Markdown,
+      Underline,
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
       Placeholder.configure({
         placeholder: "Commencez à écrire... ou tapez '/' pour les commandes, ou appuyez sur entrée.",
       }),
@@ -116,19 +128,25 @@ export function FullPageEditor({
     onUpdate: ({ editor }) => {
       setFormData(prev => ({ ...prev, description: (editor.storage as any).markdown.getMarkdown() }));
       
-      // Simple slash command detection
-      const text = editor.getText();
-      const textBeforeCursor = editor.state.doc.textBetween(
-        Math.max(0, editor.state.selection.from - 1), 
-        editor.state.selection.from, 
+      const { selection } = editor.state;
+      const textAfterSlash = editor.state.doc.textBetween(
+        Math.max(0, selection.from - 20), 
+        selection.from, 
         '\n'
       );
       
-      if (textBeforeCursor === '/') {
-        setShowSlashMenu(true);
-      } else {
-        setShowSlashMenu(false);
+      const slashIndex = textAfterSlash.lastIndexOf('/');
+      if (slashIndex !== -1) {
+        const query = textAfterSlash.slice(slashIndex + 1);
+        if (!query.includes(' ')) {
+          setShowSlashMenu(true);
+          setSlashQuery(query.toLowerCase());
+          return;
+        }
       }
+      
+      setShowSlashMenu(false);
+      setSlashQuery('');
     },
     editorProps: {
       attributes: {
@@ -152,24 +170,42 @@ export function FullPageEditor({
 
   // Removed toggleVimMode and getCodeMirrorExtensions as they are no longer needed.
 
-  const insertTemplate = (templateId: string) => {
-    const template = NOTE_TEMPLATES.find(t => t.id === templateId);
-    if (template && editor) {
-      // Retirer le '/' qui a déclenché le menu
-      editor.commands.deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from });
-      editor.commands.insertContent(template.data.description || '');
-      toast({ title: 'Template injecté', description: template.name });
-      setShowSlashMenu(false);
-    }
-  };
-
   const handleShowCode = () => {
     if (editor) {
-      editor.commands.deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from });
+      const { from } = editor.state.selection;
+      editor.commands.deleteRange({ from: from - slashQuery.length - 1, to: from });
       editor.chain().focus().toggleCodeBlock().run();
     }
     setShowSlashMenu(false);
   };
+
+  const executeCommand = (command: () => void) => {
+    if (editor) {
+      const { from } = editor.state.selection;
+      editor.commands.deleteRange({ from: from - slashQuery.length - 1, to: from });
+      command();
+    }
+    setShowSlashMenu(false);
+  };
+
+  const SLASH_COMMANDS = [
+    { id: 'h1', label: 'Titre 1', icon: Heading1, command: () => editor?.chain().focus().toggleHeading({ level: 1 }).run() },
+    { id: 'h2', label: 'Titre 2', icon: Heading2, command: () => editor?.chain().focus().toggleHeading({ level: 2 }).run() },
+    { id: 'h3', label: 'Titre 3', icon: Heading3, command: () => editor?.chain().focus().toggleHeading({ level: 3 }).run() },
+    { id: 'text', label: 'Texte', icon: Type, command: () => editor?.chain().focus().setParagraph().run() },
+    { id: 'bullet', label: 'Liste à puces', icon: List, command: () => editor?.chain().focus().toggleBulletList().run() },
+    { id: 'ordered', label: 'Liste numérotée', icon: ListOrdered, command: () => editor?.chain().focus().toggleOrderedList().run() },
+    { id: 'task', label: 'Liste de tâches', icon: CheckSquare, command: () => editor?.chain().focus().toggleTaskList().run() },
+    { id: 'quote', label: 'Citation', icon: Quote, command: () => editor?.chain().focus().toggleBlockquote().run() },
+    { id: 'code', label: 'Bloc de Code', icon: Code2, command: handleShowCode },
+    { id: 'divider', label: 'Séparateur', icon: Minus, command: () => editor?.chain().focus().setHorizontalRule().run() },
+    { id: 'journal', label: 'Modèle Journal', icon: BookOpen, command: () => editor?.commands.insertContent(NOTE_TEMPLATES.find(t => t.id === 'daily-log')?.data.description || '') },
+    { id: 'bug', label: 'Modèle Bug', icon: Bug, command: () => editor?.commands.insertContent(NOTE_TEMPLATES.find(t => t.id === 'bug-fix')?.data.description || '') },
+  ];
+
+  const filteredCommands = SLASH_COMMANDS.filter(cmd => 
+    cmd.label.toLowerCase().includes(slashQuery) || cmd.id.includes(slashQuery)
+  );
 
   const handleSave = () => {
     if (!formData.title.trim() || !formData.category.trim()) {
@@ -353,20 +389,29 @@ export function FullPageEditor({
         <div className="min-h-[300px] mb-8 relative">
           
           {showSlashMenu && (
-            <div className="absolute z-50 left-0 mt-8 flex flex-col p-1.5 bg-card/95 backdrop-blur-md border border-border/50 rounded-xl shadow-2xl w-56 animate-scale-in">
-              <div className="flex justify-between items-center px-2 py-1.5">
-                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Slash Commands</span>
-                <button onClick={() => setShowSlashMenu(false)} className="text-muted-foreground hover:text-foreground"><X className="w-3 h-3" /></button>
+            <div className="absolute z-50 left-0 mt-8 flex flex-col p-1 bg-card/98 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl w-64 animate-scale-in max-h-[400px] overflow-y-auto">
+              <div className="px-3 py-2 flex items-center justify-between border-b border-border/30 mb-1">
+                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Commandes</span>
+                {slashQuery && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">/{slashQuery}</span>}
               </div>
-              <button onClick={handleShowCode} className="flex items-center gap-2 px-2 py-2 text-sm hover:bg-muted rounded-lg text-left transition-colors">
-                <Code2 className="w-4 h-4 text-emerald-500" /> Ajouter un bloc de Code
-              </button>
-              <button onClick={() => insertTemplate('daily-log')} className="flex items-center gap-2 px-2 py-2 text-sm hover:bg-muted rounded-lg text-left transition-colors">
-                <BookOpen className="w-4 h-4 text-blue-500" /> Insérer Daily Log
-              </button>
-              <button onClick={() => insertTemplate('bug-fix')} className="flex items-center gap-2 px-2 py-2 text-sm hover:bg-muted rounded-lg text-left transition-colors">
-                <Bug className="w-4 h-4 text-rose-500" /> Insérer Rapport de Bug
-              </button>
+              <div className="p-1 space-y-0.5">
+                {filteredCommands.length > 0 ? (
+                  filteredCommands.map(cmd => (
+                    <button
+                      key={cmd.id}
+                      onClick={() => executeCommand(cmd.command)}
+                      className="w-full flex items-center gap-3 px-2.5 py-2 text-sm hover:bg-primary/10 hover:text-primary rounded-lg text-left transition-all group"
+                    >
+                      <div className="w-8 h-8 rounded-md bg-muted group-hover:bg-primary/20 flex items-center justify-center transition-colors">
+                        <cmd.icon className="w-4 h-4" />
+                      </div>
+                      <span className="font-medium">{cmd.label}</span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-3 py-4 text-xs text-muted-foreground text-center italic">Aucun résultat</div>
+                )}
+              </div>
             </div>
           )}
 

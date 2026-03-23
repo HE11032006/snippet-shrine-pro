@@ -305,6 +305,48 @@
       transform: scale(1); 
     }
   }
+
+  /* TipTap Specific Styles */
+  .ProseMirror {
+    @apply outline-none selection:bg-primary/20;
+  }
+
+  .ProseMirror p.is-editor-empty:first-child::before {
+    @apply text-muted-foreground/30 float-left h-0 pointer-events-none;
+    content: attr(data-placeholder);
+  }
+
+  .ProseMirror h1 { @apply text-4xl font-bold mb-6 mt-8 tracking-tight; }
+  .ProseMirror h2 { @apply text-3xl font-bold mb-4 mt-6 tracking-tight; }
+  .ProseMirror h3 { @apply text-2xl font-bold mb-3 mt-5 tracking-tight; }
+  
+  .ProseMirror blockquote {
+    @apply border-l-4 border-primary/30 pl-4 py-1 my-6 italic text-muted-foreground bg-primary/5 rounded-r-lg;
+  }
+
+  .ProseMirror ul[data-type="taskList"] {
+    @apply list-none p-0 my-6;
+  }
+
+  .ProseMirror ul[data-type="taskList"] li {
+    @apply flex items-start gap-3 mb-2;
+  }
+
+  .ProseMirror ul[data-type="taskList"] input[type="checkbox"] {
+    @apply mt-1.5 w-4 h-4 rounded border-border bg-background text-primary focus:ring-primary/30 transition-all cursor-pointer accent-primary;
+  }
+
+  .ProseMirror ul[data-type="taskList"] li > div {
+    @apply flex-1 font-medium;
+  }
+
+  .ProseMirror hr {
+    @apply border-t border-border/50 my-8;
+  }
+
+  .wiki-link {
+    @apply font-medium text-primary decoration-primary/30 underline-offset-4 hover:underline;
+  }
 }
 
 @media print {
