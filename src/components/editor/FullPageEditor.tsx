@@ -418,14 +418,6 @@ export function FullPageEditor({
           <EditorContent editor={editor} onClick={() => setShowSlashMenu(false)} />
         </div>
 
-        <button 
-          onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
-          className="w-full py-4 mt-8 border border-dashed border-border/50 rounded-xl text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 group"
-        >
-          <Code2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
-          Ajouter un bloc de code à la fin
-        </button>
-
         {/* Backlinks Section */}
         {backlinks.length > 0 && (
           <div className="mt-12 pt-6 border-t border-border/30 opacity-60 hover:opacity-100 transition-opacity">
