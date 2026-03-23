@@ -142,6 +142,34 @@ export function SettingsDialog({ isOpen, onClose, settings, onUpdateSettings }: 
                       )} />
                       Obsidian Dark
                     </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => onUpdateSettings({ ...settings, theme: 'midnight-neon' })}
+                      className={cn(
+                        "justify-start gap-2 h-9 border-primary/20 transition-all duration-300",
+                        settings.theme === 'midnight-neon' && "bg-primary/5 text-primary border-primary/50 shadow-sm"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-3 h-3 rounded-full bg-pink-600 border border-indigo-900",
+                        settings.theme === 'midnight-neon' && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                      )} />
+                      Midnight Neon
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => onUpdateSettings({ ...settings, theme: 'amber-brown' })}
+                      className={cn(
+                        "justify-start gap-2 h-9 border-primary/20 transition-all duration-300",
+                        settings.theme === 'amber-brown' && "bg-primary/5 text-primary border-primary/50 shadow-sm"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-3 h-3 rounded-full bg-amber-800 border border-amber-950",
+                        settings.theme === 'amber-brown' && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                      )} />
+                      Amber Brown
+                    </Button>
                   </div>
               </div>
             </TabsContent>

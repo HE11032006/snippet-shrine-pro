@@ -5,6 +5,9 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
+import Strike from '@tiptap/extension-strike';
 import { Markdown } from 'tiptap-markdown';
 import { CustomCodeBlock } from './extensions/CodeBlockExtension';
 import { WikiLink } from './extensions/WikiLinkExtension';
@@ -16,7 +19,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { 
   Tag, Plus, X, Command, Code2, BookOpen, Bug, Check, Link2,
-  Heading1, Heading2, Heading3, List, ListOrdered, Quote, Minus, CheckSquare, Type
+  Heading1, Heading2, Heading3, List, ListOrdered, Quote, Minus, CheckSquare, Type,
+  Bold, Italic, Underline as UnderlineIcon, Strikethrough, Palette
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { NOTE_TEMPLATES } from '@/components/NoteTemplates';
@@ -116,6 +120,9 @@ export function FullPageEditor({
       WikiLink,
       Markdown,
       Underline,
+      TextStyle,
+      Color,
+      Strike,
       TaskList,
       TaskItem.configure({
         nested: true,
@@ -192,7 +199,14 @@ export function FullPageEditor({
     { id: 'h1', label: 'Titre 1', icon: Heading1, command: () => editor?.chain().focus().toggleHeading({ level: 1 }).run() },
     { id: 'h2', label: 'Titre 2', icon: Heading2, command: () => editor?.chain().focus().toggleHeading({ level: 2 }).run() },
     { id: 'h3', label: 'Titre 3', icon: Heading3, command: () => editor?.chain().focus().toggleHeading({ level: 3 }).run() },
+    { id: 'bold', label: 'Gras', icon: Bold, command: () => editor?.chain().focus().toggleBold().run() },
+    { id: 'italic', label: 'Italique', icon: Italic, command: () => editor?.chain().focus().toggleItalic().run() },
+    { id: 'underline', label: 'Souligné', icon: UnderlineIcon, command: () => editor?.chain().focus().toggleUnderline().run() },
+    { id: 'strike', label: 'Barré', icon: Strikethrough, command: () => editor?.chain().focus().toggleStrike().run() },
     { id: 'text', label: 'Texte', icon: Type, command: () => editor?.chain().focus().setParagraph().run() },
+    { id: 'red', label: 'Texte Rouge', icon: Palette, command: () => editor?.chain().focus().setColor('#ef4444').run() },
+    { id: 'blue', label: 'Texte Bleu', icon: Palette, command: () => editor?.chain().focus().setColor('#3b82f6').run() },
+    { id: 'green', label: 'Texte Vert', icon: Palette, command: () => editor?.chain().focus().setColor('#22c55e').run() },
     { id: 'bullet', label: 'Liste à puces', icon: List, command: () => editor?.chain().focus().toggleBulletList().run() },
     { id: 'ordered', label: 'Liste numérotée', icon: ListOrdered, command: () => editor?.chain().focus().toggleOrderedList().run() },
     { id: 'task', label: 'Liste de tâches', icon: CheckSquare, command: () => editor?.chain().focus().toggleTaskList().run() },

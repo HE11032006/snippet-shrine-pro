@@ -52,9 +52,9 @@ const Index = () => {
   // Apply theme class to html element
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove('obsidian-dark');
-    if (settings.theme === 'obsidian-dark') {
-      root.classList.add('obsidian-dark');
+    root.classList.remove('obsidian-dark', 'midnight-neon', 'amber-brown');
+    if (settings.theme !== 'dark') {
+      root.classList.add(settings.theme);
     }
   }, [settings.theme]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
