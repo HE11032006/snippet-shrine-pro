@@ -79,13 +79,16 @@ const getData = async () => {
   },
 ];
 
-export function useNotes() {
+export function useNotes(vaultPath: string = '') {
   const [notes, setNotes] = useState<Note[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const vaultKey = vaultPath ? `${STORAGE_KEY}-${vaultPath}` : STORAGE_KEY;
+
   // Load notes from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    setIsLoaded(false);
+    const stored = localStorage.getItem(vaultKey);
     if (stored) {
       try {
         setNotes(JSON.parse(stored));
@@ -101,9 +104,9 @@ export function useNotes() {
   // Save notes to localStorage
   useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+      localStorage.setItem(vaultKey, JSON.stringify(notes));
     }
-  }, [notes, isLoaded]);
+  }, [notes, isLoaded, vaultKey]);
 
   const addNote = useCallback((data: NoteFormData): Note => {
     const newNote: Note = {

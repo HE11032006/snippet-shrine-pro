@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import Fuse from 'fuse.js';
 import { Command } from 'cmdk';
 import { 
   Search, 
@@ -31,6 +32,17 @@ export function CommandPalette({
   onToggleTheme 
 }: CommandPaletteProps) {
   const [search, setSearch] = useState('');
+
+  const filteredNotes = useMemo(() => {
+    if (!search.trim()) return notes.slice(0, 10);
+    
+    const fuse = new Fuse(notes, {
+      keys: ['title', 'tags', 'category'],
+      threshold: 0.4,
+    });
+    
+    return fuse.search(search).map(r => r.item).slice(0, 10);
+  }, [search, notes]);
 
   // Close on selection/action
   const runCommand = (command: () => void) => {
@@ -88,9 +100,9 @@ export function CommandPalette({
               </Command.Item>
             </Command.Group>
 
-            {notes.length > 0 && (
-              <Command.Group heading="Notes récentes" className="px-2 py-1.5 text-xs font-semibold text-muted-foreground mt-2">
-                {notes.slice(0, 10).map(note => (
+            {filteredNotes.length > 0 && (
+              <Command.Group heading="Résultats" className="px-2 py-1.5 text-xs font-semibold text-muted-foreground mt-2">
+                {filteredNotes.map(note => (
                   <Command.Item 
                     key={note.id}
                     onSelect={() => runCommand(() => onSelectNote(note.id))}

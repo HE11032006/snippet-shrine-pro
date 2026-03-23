@@ -10,7 +10,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { Settings2, Type, Code2, Palette, GitBranch, Folder, RefreshCw, ArrowUp, ArrowDown } from 'lucide-react';
+import { Settings2, Type, Code2, Palette, GitBranch, Folder, RefreshCw, ArrowUp, ArrowDown, Plus, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -27,6 +27,8 @@ interface SettingsDialogProps {
     gitRepoPath: string;
     gitAutoSync: boolean;
     gitRemoteUrl: string;
+    vaults: string[];
+    currentVault: string;
   };
   onUpdateSettings: (newSettings: any) => void;
 }
@@ -57,14 +59,18 @@ export function SettingsDialog({ isOpen, onClose, settings, onUpdateSettings }: 
 
         <div className="py-2">
           <Tabs defaultValue="appearance" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4 bg-muted/50 rounded-xl p-1">
+            <TabsList className="grid w-full grid-cols-3 mb-4 bg-muted/50 rounded-xl p-1">
               <TabsTrigger value="appearance" className="rounded-lg gap-2 text-xs font-bold">
                 <Palette className="w-3.5 h-3.5" />
                 Apparence
               </TabsTrigger>
+              <TabsTrigger value="vaults" className="rounded-lg gap-2 text-xs font-bold">
+                <Folder className="w-3.5 h-3.5" />
+                Coffres
+              </TabsTrigger>
               <TabsTrigger value="sync" className="rounded-lg gap-2 text-xs font-bold">
                 <GitBranch className="w-3.5 h-3.5" />
-                Synchronisation Git
+                Git
               </TabsTrigger>
             </TabsList>
 
@@ -171,6 +177,79 @@ export function SettingsDialog({ isOpen, onClose, settings, onUpdateSettings }: 
                       Amber Brown
                     </Button>
                   </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="vaults" className="space-y-6 pt-2">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Coffres enregistrés</Label>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 text-xs gap-1.5 text-primary hover:bg-primary/10"
+                    onClick={async () => {
+                      if (window.require) {
+                        const { ipcRenderer } = window.require('electron');
+                        const path = await ipcRenderer.invoke('select-directory');
+                        if (path && !settings.vaults.includes(path)) {
+                          onUpdateSettings({ 
+                            ...settings, 
+                            vaults: [...settings.vaults, path],
+                            currentVault: path
+                          });
+                        }
+                      }
+                    }}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Ajouter
+                  </Button>
+                </div>
+                
+                <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1 custom-scrollbar">
+                  {settings.vaults.map((vault) => (
+                    <div 
+                      key={vault}
+                      className={cn(
+                        "flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer group",
+                        settings.currentVault === vault 
+                          ? "bg-primary/5 border-primary/40 shadow-sm" 
+                          : "bg-muted/20 border-border/40 hover:border-primary/20"
+                      )}
+                      onClick={() => onUpdateSettings({ ...settings, currentVault: vault })}
+                    >
+                      <div className={cn(
+                        "p-1.5 rounded-lg",
+                        settings.currentVault === vault ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                      )}>
+                        <Folder className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-bold truncate">{vault.split('/').pop()}</div>
+                        <div className="text-[10px] text-muted-foreground truncate opacity-60">{vault}</div>
+                      </div>
+                      {settings.vaults.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:bg-destructive/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newVaults = settings.vaults.filter(v => v !== vault);
+                            onUpdateSettings({ 
+                              ...settings, 
+                              vaults: newVaults,
+                              currentVault: settings.currentVault === vault ? newVaults[0] : settings.currentVault
+                            });
+                          }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </TabsContent>
 

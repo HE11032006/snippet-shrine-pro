@@ -178,13 +178,42 @@
     --input: 240 10% 8%;
     --ring: 320 100% 60%;
 
-    --sidebar-background: 240 10% 1%;
+    --sidebar-background: 240 10% 1.5%;
     --sidebar-foreground: 240 5% 85%;
 
     --code-background: 240 10% 1%;
     --code-border: 240 10% 10%;
     --gradient-primary: linear-gradient(135deg, #ff007f, #b200ff);
-    --gradient-subtle: linear-gradient(180deg, #050505, #101010);
+    --gradient-subtle: linear-gradient(180deg, #050505, #0a0a0c);
+  }
+
+  .midnight-neon .glass-panel {
+    background: rgba(10, 10, 25, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 0, 150, 0.2);
+    box-shadow: 
+      0 10px 40px rgba(0, 0, 0, 0.8), 
+      0 0 20px rgba(255, 0, 150, 0.1),
+      inset 0 0 15px rgba(0, 255, 255, 0.03);
+  }
+
+  .midnight-neon .glass-panel:hover {
+    border: 1px solid rgba(255, 0, 150, 0.4);
+    box-shadow: 
+      0 10px 40px rgba(0, 0, 0, 0.9), 
+      0 0 30px rgba(255, 0, 150, 0.2),
+      inset 0 0 20px rgba(0, 255, 255, 0.05);
+  }
+
+  .midnight-neon .tag-badge {
+    background: rgba(0, 255, 255, 0.05);
+    color: #00ffff;
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+  }
+
+  .midnight-neon h1, .midnight-neon h2, .midnight-neon h3, .midnight-neon .text-primary {
+    text-shadow: 0 0 12px rgba(255, 0, 150, 0.3);
   }
 
   .amber-brown {
@@ -218,6 +247,18 @@
     --gradient-primary: linear-gradient(135deg, #d97706, #b45309);
     --gradient-subtle: linear-gradient(180deg, #15100c, #1a1512);
   }
+
+  .amber-brown .glass-panel {
+    background: rgba(25, 20, 15, 0.85);
+    border: 1px solid rgba(217, 119, 6, 0.15);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  }
+
+  .amber-brown .tag-badge {
+    background: rgba(217, 119, 6, 0.1);
+    color: #f59e0b;
+    border: 1px solid rgba(217, 119, 6, 0.2);
+  }
 }
 
 @layer base {
@@ -227,7 +268,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
   }
 
   code, pre, .font-mono {

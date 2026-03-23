@@ -1,4 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Fuse from 'fuse.js';
 import { Plus, Maximize2 } from 'lucide-react';
 import { useNotes } from '@/hooks/useNotes';
 import { Note, NoteFormData } from '@/types/note';
@@ -25,7 +27,26 @@ import {
 import { cn } from '@/lib/utils';
 
 const Index = () => {
-  const { notes, isLoaded, addNote, updateNote, deleteNote, getCategories, getSubcategories, getAllTags, duplicateNote, importNotes, toggleStar } = useNotes();
+  const [settings, setSettings] = useState(() => {
+    const saved = localStorage.getItem('shrine-settings');
+    return saved ? JSON.parse(saved) : {
+      codeFontSize: '0.9rem',
+      titleFontSize: '1.25rem',
+      theme: 'dark',
+      gitRepoPath: '',
+      gitAutoSync: false,
+      gitRemoteUrl: '',
+      vaults: [],
+      currentVault: ''
+    };
+  });
+
+  // Save settings when changed
+  useEffect(() => {
+    localStorage.setItem('shrine-settings', JSON.stringify(settings));
+  }, [settings]);
+
+  const { notes, isLoaded, addNote, updateNote, deleteNote, getCategories, getSubcategories, getAllTags, duplicateNote, importNotes, toggleStar } = useNotes(settings.currentVault);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -39,14 +60,6 @@ const Index = () => {
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [displayDensity, setDisplayDensity] = useState<'compact' | 'cozy'>('cozy');
-  const [settings, setSettings] = useState({
-    codeFontSize: '0.9rem',
-    titleFontSize: '1.25rem',
-    theme: 'dark',
-    gitRepoPath: '',
-    gitAutoSync: false,
-    gitRemoteUrl: ''
-  });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isZenMode, setIsZenMode] = useState(false);
   const [isGraphOpen, setIsGraphOpen] = useState(false);
@@ -137,16 +150,22 @@ const Index = () => {
       result = result.filter(note => new Date(note.createdAt) <= toDate);
     }
 
-    // Filter by search query with advanced scope
+    // Filter by search query with Fuse.js for fuzzy matching
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(note => {
-        const matchTitle = advancedFilters.searchInTitle && note.title.toLowerCase().includes(query);
-        const matchDescription = advancedFilters.searchInDescription && note.description.toLowerCase().includes(query);
-        const matchCode = advancedFilters.searchInCode && note.code.toLowerCase().includes(query);
-        const matchTags = note.tags.some(tag => tag.toLowerCase().includes(query));
-        return matchTitle || matchDescription || matchCode || matchTags;
+      const fuse = new Fuse(result, {
+        keys: [
+          { name: 'title', weight: 1.0 },
+          { name: 'tags', weight: 0.8 },
+          { name: 'description', weight: 0.5 },
+          { name: 'code', weight: 0.3 }
+        ],
+        threshold: 0.4,
+        includeMatches: true,
+        shouldSort: true,
       });
+
+      const fuseResults = fuse.search(searchQuery);
+      result = fuseResults.map(r => r.item);
     }
 
     return result;
@@ -414,38 +433,46 @@ ${note.code}
   return (
     <div className="h-screen w-full bg-background overflow-hidden flex relative">
       {/* Column 1: Sidebar - Fixed width, sticky to snippet list */}
-      {!isZenMode && (
-        <aside 
-          className={cn(
-            "h-full bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out z-20 shrink-0",
-            isSidebarCollapsed ? "w-16" : "w-64"
-          )}
-        >
-          <Sidebar
-            categories={categories}
-            selectedCategory={selectedCategory}
-            selectedSubcategory={selectedSubcategory}
-            onSelectCategory={handleSelectCategory}
-            onNewNote={handleNewNote}
-            notesCount={notes.length}
-            notes={notes}
-            onImport={importNotes}
-            tags={allTags}
-            selectedTags={selectedTags}
-            onToggleTag={handleToggleTag}
-            onClearTags={handleClearTags}
-            displayDensity={displayDensity}
-            onToggleDensity={() => setDisplayDensity(prev => prev === 'compact' ? 'cozy' : 'compact')}
-            onOpenSettings={() => setIsSettingsOpen(true)}
-            onToggleZen={() => setIsZenMode(prev => !prev)}
-            onMoveNoteToCategory={handleMoveNoteToCategory}
-            collapsed={isSidebarCollapsed}
-            onToggleCollapse={handleToggleSidebar}
-            onNewDailyLog={handleNewDailyLog}
-            onOpenGraph={() => setIsGraphOpen(true)}
-          />
-        </aside>
-      )}
+      {/* Column 1: Sidebar - Fixed width, sticky to snippet list */}
+      <AnimatePresence>
+        {!isZenMode && (
+          <motion.aside 
+            key="sidebar"
+            initial={{ x: -260, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -260, opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className={cn(
+              "h-full bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out z-20 shrink-0 overflow-hidden",
+              isSidebarCollapsed ? "w-16" : "w-64"
+            )}
+          >
+            <Sidebar
+              categories={categories}
+              selectedCategory={selectedCategory}
+              selectedSubcategory={selectedSubcategory}
+              onSelectCategory={handleSelectCategory}
+              onNewNote={handleNewNote}
+              notesCount={notes.length}
+              notes={notes}
+              onImport={importNotes}
+              tags={allTags}
+              selectedTags={selectedTags}
+              onToggleTag={handleToggleTag}
+              onClearTags={handleClearTags}
+              displayDensity={displayDensity}
+              onToggleDensity={() => setDisplayDensity(prev => prev === 'compact' ? 'cozy' : 'compact')}
+              onOpenSettings={() => setIsSettingsOpen(true)}
+              onToggleZen={() => setIsZenMode(prev => !prev)}
+              onMoveNoteToCategory={handleMoveNoteToCategory}
+              collapsed={isSidebarCollapsed}
+              onToggleCollapse={handleToggleSidebar}
+              onNewDailyLog={handleNewDailyLog}
+              onOpenGraph={() => setIsGraphOpen(true)}
+            />
+          </motion.aside>
+        )}
+      </AnimatePresence>
 
       {/* Main Resizable Area */}
       <PanelGroup direction="horizontal" className="flex-1">
@@ -504,30 +531,50 @@ ${note.code}
                 <Maximize2 className="w-4 h-4" />
               </Button>
             )}
-            {isFormOpen ? (
-              <FullPageEditor
-                note={editingNote}
-                categories={categories}
-                notes={notes}
-                existingTags={allTags}
-                existingSubcategories={allSubcategories}
-                onSave={handleSaveNote}
-                onCancel={handleCancelForm}
-                onSelectNoteByTitle={(title) => {
-                  const found = notes.find(n => n.title.toLowerCase() === title.toLowerCase());
-                  if (found) setSelectedNoteId(found.id);
-                }}
-              />
-            ) : (
-              <NoteDetail
-                note={notes.find(n => n.id === selectedNoteId) || null}
-                onEdit={handleEditNote}
-                onDelete={handleDeleteNote}
-                onDuplicate={handleDuplicateNote}
-                onToggleStar={toggleStar}
-                settings={settings}
-              />
-            )}
+            <AnimatePresence mode="wait">
+              {isFormOpen ? (
+                <motion.div
+                  key="form"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="h-full"
+                >
+                  <FullPageEditor
+                    note={editingNote}
+                    categories={categories}
+                    notes={notes}
+                    existingTags={allTags}
+                    existingSubcategories={allSubcategories}
+                    onSave={handleSaveNote}
+                    onCancel={handleCancelForm}
+                    onSelectNoteByTitle={(title) => {
+                      const found = notes.find(n => n.title.toLowerCase() === title.toLowerCase());
+                      if (found) setSelectedNoteId(found.id);
+                    }}
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="detail"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="h-full"
+                >
+                  <NoteDetail
+                    note={notes.find(n => n.id === selectedNoteId) || null}
+                    onEdit={handleEditNote}
+                    onDelete={handleDeleteNote}
+                    onDuplicate={handleDuplicateNote}
+                    onToggleStar={toggleStar}
+                    settings={settings}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </main>
         </Panel>
       </PanelGroup>
@@ -567,15 +614,28 @@ ${note.code}
       />
       
       {/* Graph View Overlay */}
-      <GraphView 
-        notes={notes}
-        isOpen={isGraphOpen}
-        onClose={() => setIsGraphOpen(false)}
-        onSelectNote={(id) => {
-          setSelectedNoteId(id);
-          setIsGraphOpen(false);
-        }}
-      />
+      <AnimatePresence>
+        {isGraphOpen && (
+          <motion.div
+            key="graph-overlay"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-[100]"
+          >
+            <GraphView 
+              notes={notes}
+              isOpen={isGraphOpen}
+              onClose={() => setIsGraphOpen(false)}
+              onSelectNote={(id) => {
+                setSelectedNoteId(id);
+                setIsGraphOpen(false);
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
