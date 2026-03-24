@@ -47,7 +47,7 @@ export function NoteList({
 }: NoteListProps) {
   return (
     <div className="flex flex-col h-full border-r border-border/50 bg-muted/10">
-      <div className="p-4 space-y-4 bg-background/50 backdrop-blur-sm border-b border-border/40">
+      <div className="relative z-10 p-4 space-y-4 bg-background/50 backdrop-blur-sm border-b border-border/40">
         <SearchBar value={searchQuery} onChange={onSearchChange} />
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
