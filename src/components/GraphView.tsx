@@ -2,37 +2,43 @@ import React, { useMemo, useState } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import { Note } from '@/types/note';
 import { useTheme } from '@/hooks/useTheme';
-import { X, Search, Tag } from 'lucide-react';
+import { X, Search, Folder } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { NoteFormData } from '@/types/note';
+import { toast } from '@/hooks/use-toast';
 
 interface GraphViewProps {
   notes: Note[];
   onSelectNote: (id: string) => void;
   onClose: () => void;
   isOpen: boolean;
+  onUpdateNote?: (id: string, data: Partial<NoteFormData>) => void;
 }
 
-export const GraphView: React.FC<GraphViewProps> = ({ notes, onSelectNote, onClose, isOpen }) => {
+export const GraphView: React.FC<GraphViewProps> = ({ notes, onSelectNote, onClose, isOpen, onUpdateNote }) => {
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTag, setSelectedTag] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [isShattered, setIsShattered] = useState(false);
 
-  const allTags = useMemo(() => {
-    const tags = new Set<string>();
-    notes.forEach(note => note.tags?.forEach(tag => tags.add(tag)));
-    return Array.from(tags).sort();
+  const allCategories = useMemo(() => {
+    const cats = new Set<string>();
+    notes.forEach(note => {
+      if (note.category) cats.add(note.category);
+    });
+    return Array.from(cats).sort();
   }, [notes]);
 
   const filteredNotes = useMemo(() => {
     return notes.filter(note => {
       const matchesSearch = (note.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
                             (note.description || '').toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesTag = selectedTag === 'all' || (note.tags && note.tags.includes(selectedTag));
-      return matchesSearch && matchesTag;
+      const matchesCategory = selectedCategory === 'all' || note.category === selectedCategory;
+      return matchesSearch && matchesCategory;
     });
-  }, [notes, searchQuery, selectedTag]);
+  }, [notes, searchQuery, selectedCategory]);
 
   const graphData = useMemo(() => {
     const nodes = filteredNotes.map(note => ({
@@ -64,9 +70,31 @@ export const GraphView: React.FC<GraphViewProps> = ({ notes, onSelectNote, onClo
 
   if (!isOpen) return null;
 
+  const handleLinkRightClick = (link: any) => {
+    const sourceNode = filteredNotes.find(n => n.id === link.source.id);
+    const targetNode = filteredNotes.find(n => n.id === link.target.id);
+    
+    if (sourceNode && targetNode && onUpdateNote) {
+      // Fracasser l'écran
+      setIsShattered(true);
+      setTimeout(() => setIsShattered(false), 800);
+      
+      // Supprimer le lien dans la description
+      const regex = new RegExp(`\\[\\[${targetNode.title}\\]\\]`, 'g');
+      const newDescription = (sourceNode.description || '').replace(regex, targetNode.title);
+      
+      onUpdateNote(sourceNode.id, { description: newDescription });
+      toast({
+        title: "Connexion Physique Rompue",
+        description: `Le lien a été détruit et retiré du code.`,
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-[100] bg-background/90 backdrop-blur-xl flex items-center justify-center p-4 sm:p-8 animate-in fade-in zoom-in duration-300">
-      <div className="relative w-full h-full bg-[#050505] rounded-3xl border border-primary/20 shadow-[0_0_50px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col">
+    <div className={`fixed inset-0 z-[100] bg-background/90 backdrop-blur-xl flex items-center justify-center p-4 sm:p-8 animate-in fade-in zoom-in duration-300 ${isShattered ? 'animate-pulse scale-105 saturate-200 hue-rotate-180 brightness-150 blur-sm' : ''}`}>
+      <div className={`relative w-full h-full bg-[#050505] rounded-3xl border border-primary/20 shadow-[0_0_50px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col transition-all duration-75`}>
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 border-b border-border/40 bg-muted/20 gap-4">
           <div className="space-y-1">
@@ -85,15 +113,15 @@ export const GraphView: React.FC<GraphViewProps> = ({ notes, onSelectNote, onClo
               />
             </div>
             
-            <Select value={selectedTag} onValueChange={setSelectedTag}>
-              <SelectTrigger className="w-[140px] h-9 rounded-full bg-background/50 border-border/50 text-xs">
-                <Tag className="w-3.5 h-3.5 mr-2" />
-                <SelectValue placeholder="Tous les tags" />
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-[160px] h-9 rounded-full bg-background/50 border-border/50 text-xs">
+                <Folder className="w-3.5 h-3.5 mr-2" />
+                <SelectValue placeholder="Toutes catégories" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les tags</SelectItem>
-                {allTags.map(tag => (
-                  <SelectItem key={tag} value={tag}>#{tag}</SelectItem>
+              <SelectContent className="z-[200]">
+                <SelectItem value="all">Toutes catégories</SelectItem>
+                {allCategories.map(cat => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -125,25 +153,28 @@ export const GraphView: React.FC<GraphViewProps> = ({ notes, onSelectNote, onClo
               ctx.fill();
               
               // Glow effect
-              ctx.shadowColor = node.id === filteredNotes[0]?.id ? '#f43f5e' : '#0ea5e9';
-              ctx.shadowBlur = 15;
+              ctx.shadowColor = node.id === 'BLACK_HOLE' ? '#a855f7' : (node.id === filteredNotes[0]?.id ? '#f43f5e' : '#0ea5e9');
+              ctx.shadowBlur = node.id === 'BLACK_HOLE' ? 30 : 15;
               ctx.stroke();
               ctx.shadowBlur = 0;
 
               // Text label
               ctx.textAlign = 'center';
               ctx.textBaseline = 'middle';
-              ctx.fillStyle = '#ffffff';
-              ctx.fillText(label, node.x, node.y + 10);
+              ctx.fillStyle = node.id === 'BLACK_HOLE' ? '#a855f7' : '#ffffff';
+              ctx.font = node.id === 'BLACK_HOLE' ? `bold ${fontSize * 1.5}px Sans-Serif` : `${fontSize}px Sans-Serif`;
+              ctx.fillText(label, node.x, node.y + (node.id === 'BLACK_HOLE' ? 15 : 10));
             }}
-            linkColor={() => 'rgba(255, 255, 255, 0.2)'}
+            linkColor={(link: any) => link.target.id === 'BLACK_HOLE' || link.target === 'BLACK_HOLE' ? 'rgba(168, 85, 247, 0.4)' : 'rgba(255, 255, 255, 0.2)'}
             linkDirectionalParticles={4}
             linkDirectionalParticleSpeed={0.006}
-            linkWidth={1.5}
+            linkWidth={(link: any) => link.target.id === 'BLACK_HOLE' || link.target === 'BLACK_HOLE' ? 0.5 : 1.5}
             onNodeClick={(node: any) => {
+              if (node.id === 'BLACK_HOLE') return;
               onSelectNote(node.id);
               onClose();
             }}
+            onLinkClick={handleLinkRightClick}
             backgroundColor="transparent"
             width={window.innerWidth > 1200 ? window.innerWidth - 128 : window.innerWidth - 32}
             height={window.innerHeight - 150}
@@ -153,7 +184,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ notes, onSelectNote, onClo
               <div className="text-center space-y-2 bg-black/50 p-6 rounded-2xl backdrop-blur-sm border border-white/10">
                 <Search className="w-8 h-8 text-muted-foreground mx-auto" />
                 <p className="text-sm font-medium text-white">Aucune note ne correspond aux filtres</p>
-                <Button variant="link" onClick={() => { setSearchQuery(''); setSelectedTag('all'); }} className="text-xs text-primary">Réinitialiser les filtres</Button>
+                <Button variant="link" onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }} className="text-xs text-primary">Réinitialiser les filtres</Button>
               </div>
             </div>
           )}

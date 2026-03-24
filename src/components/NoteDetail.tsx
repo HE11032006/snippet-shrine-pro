@@ -18,6 +18,8 @@ interface NoteDetailProps {
   };
 }
 
+import { useSynestheticFeedback } from '@/hooks/useSynestheticFeedback';
+
 export function NoteDetail({
   note,
   onEdit,
@@ -27,6 +29,14 @@ export function NoteDetail({
   onBack,
   settings
 }: NoteDetailProps) {
+  const { triggerFeedback } = useSynestheticFeedback();
+
+  React.useEffect(() => {
+    if (note?.code) {
+      triggerFeedback(note.code);
+    }
+  }, [note?.id, triggerFeedback]);
+
   if (!note) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-12 text-center bg-background/30">

@@ -24,6 +24,8 @@ matrix = [[i*j for j in range(3)] for i in range(3)]
 print(matrix)  # [[0,0,0], [0,1,2], [0,2,4]]`,
     language: 'python',
     tags: ['python', 'list', 'comprehension', 'basics'],
+    viewCount: 0,
+    lastViewedAt: new Date().toISOString(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -51,6 +53,8 @@ const getData = async () => {
 };`,
     language: 'javascript',
     tags: ['javascript', 'async', 'promises', 'es6'],
+    viewCount: 0,
+    lastViewedAt: new Date().toISOString(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -74,6 +78,8 @@ const getData = async () => {
 }`,
     language: 'css',
     tags: ['css', 'flexbox', 'centering', 'layout'],
+    viewCount: 0,
+    lastViewedAt: new Date().toISOString(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -112,6 +118,8 @@ export function useNotes(vaultPath: string = '') {
     const newNote: Note = {
       ...data,
       id: uuidv4(),
+      viewCount: 0,
+      lastViewedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -121,11 +129,26 @@ export function useNotes(vaultPath: string = '') {
 
   const updateNote = useCallback((id: string, data: Partial<NoteFormData>) => {
     setNotes(prev =>
-      prev.map(note =>
-        note.id === id
-          ? { ...note, ...data, updatedAt: new Date().toISOString() }
-          : note
-      )
+      prev.map(note => {
+        if (note.id !== id) return note;
+        const now = new Date().toISOString();
+        let updatedHistory = note.history || [];
+        
+        // Save the current code to history if it's being changed
+        if (data.code !== undefined && data.code !== note.code) {
+          updatedHistory = [
+            ...updatedHistory,
+            { timestamp: now, code: note.code }
+          ].slice(-5); // Keep the latest 5 ghosts
+        }
+
+        return { 
+          ...note, 
+           ...data, 
+           updatedAt: now,
+           history: updatedHistory
+        };
+      })
     );
   }, []);
 
@@ -160,6 +183,8 @@ export function useNotes(vaultPath: string = '') {
       ...noteToDuplicate,
       id: uuidv4(),
       title: `${noteToDuplicate.title} (copie)`,
+      viewCount: 0,
+      lastViewedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -185,6 +210,16 @@ export function useNotes(vaultPath: string = '') {
     );
   }, []);
 
+  const incrementViewCount = useCallback((id: string) => {
+    setNotes(prev =>
+      prev.map(note =>
+        note.id === id
+          ? { ...note, viewCount: (note.viewCount || 0) + 1, lastViewedAt: new Date().toISOString() }
+          : note
+      )
+    );
+  }, []);
+
   return {
     notes,
     isLoaded,
@@ -197,5 +232,6 @@ export function useNotes(vaultPath: string = '') {
     duplicateNote,
     importNotes,
     toggleStar,
+    incrementViewCount,
   };
 }

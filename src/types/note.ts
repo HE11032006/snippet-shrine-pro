@@ -8,8 +8,11 @@ export interface Note {
   language: string;
   tags: string[];
   isStarred?: boolean;
+  viewCount?: number;
+  lastViewedAt?: string;
   createdAt: string;
   updatedAt: string;
+  history?: { timestamp: string; code: string }[];
 }
 
 export type NoteFormData = Omit<Note, 'id' | 'createdAt' | 'updatedAt'>;

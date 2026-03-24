@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { parseNoteLinks } from '@/components/NoteLink';
 import { LanguageIcon } from './LanguageIcon';
 import { cn } from '@/lib/utils';
+import { useSynestheticFeedback } from '@/hooks/useSynestheticFeedback';
 import { toPng } from 'html-to-image';
 import { 
   DropdownMenu, 
@@ -39,6 +40,7 @@ interface NoteCardProps {
 export function NoteCard({ note, onEdit, onDelete, onDuplicate, isSelected, onToggleSelect, allNotes = [], onNoteClick, settings }: NoteCardProps) {
   const [copied, setCopied] = useState(false);
   const noteRef = useRef<HTMLElement>(null);
+  const { triggerFeedback } = useSynestheticFeedback();
 
   const handleExportImage = async () => {
     if (!noteRef.current) return;
@@ -162,6 +164,7 @@ ${note.code}
   const handleCopy = async () => {
     await navigator.clipboard.writeText(note.code);
     setCopied(true);
+    triggerFeedback(note.code); // DECLENCHER FEEDBACK SYNESTHESIQUE
     toast({
       title: 'Code copié !',
       description: 'Le code a été copié dans le presse-papiers.',
@@ -189,7 +192,6 @@ ${note.code}
 
   const hasCode = note.code && note.code.trim().length > 0;
 
-  // Render description with note links
   const renderDescription = (text: string) => {
     if (!onNoteClick || allNotes.length === 0) {
       return (
@@ -218,8 +220,33 @@ ${note.code}
     );
   };
 
+  const getDecayState = () => {
+    const lastViewed = note.lastViewedAt || note.createdAt;
+    const daysSinceView = (new Date().getTime() - new Date(lastViewed).getTime()) / (1000 * 3600 * 24);
+    const views = note.viewCount || 0;
+    
+    // Concept 1: Evolved snippets have huge view counts and are frequently accessed
+    if (views >= 10 && daysSinceView < 7) return 'evolved';
+    
+    // Concept 1: Severely decayed snippets haven't been seen in a month and have low views
+    if (daysSinceView > 30 && views < 5) return 'decayed-severe';
+    
+    // Concept 1: Mildly decayed snippets
+    if (daysSinceView > 14) return 'decayed-mild';
+    
+    return 'normal';
+  };
+
+  const decayState = getDecayState();
+  const decayStyles = {
+    'normal': '',
+    'evolved': 'ring-2 ring-amber-400/50 shadow-[0_0_30px_rgba(251,191,36,0.2)] bg-gradient-to-br from-amber-500/10 via-background to-background',
+    'decayed-mild': 'opacity-70 grayscale-[40%] hover:opacity-100 hover:grayscale-0',
+    'decayed-severe': 'opacity-40 grayscale-[80%] blur-[0.5px] hover:blur-none hover:opacity-80 hover:grayscale-[50%] border-red-900/30 font-mono relative before:absolute before:inset-0 before:bg-[url("https://grainy-gradients.vercel.app/noise.svg")] before:opacity-30 before:mix-blend-overlay before:pointer-events-none'
+  };
+
   return (
-    <article ref={noteRef} className={`glass-panel rounded-2xl overflow-hidden animate-slide-up card-hover relative group/card ${isSelected ? 'ring-2 ring-primary' : ''}`}>
+    <article ref={noteRef} className={`glass-panel rounded-2xl overflow-hidden animate-slide-up card-hover relative group/card transition-all duration-1000 ${isSelected ? 'ring-2 ring-primary' : ''} ${decayStyles[decayState]}`}>
       {/* Selection Checkbox */}
       {onToggleSelect && (
         <div className="absolute top-4 left-4 z-10">
@@ -395,26 +422,52 @@ ${note.code}
             </Tooltip>
           </div>
 
-          <SyntaxHighlighter
-            language={note.language}
-            style={oneDark}
-            customStyle={{
-              margin: 0,
-              borderRadius: 0,
-              fontSize: settings?.codeFontSize || '0.9rem',
-              lineHeight: '1.6',
-              padding: '1.5rem',
-              background: 'transparent',
-            }}
-            codeTagProps={{
-              style: {
-                fontFamily: '"JetBrains Mono", monospace',
-              }
-            }}
-            showLineNumbers
-          >
-            {note.code}
-          </SyntaxHighlighter>
+          {/* Fantômes de l'Historique (Ghost Texts) */}
+          {note.history && note.history.length > 0 && (
+            <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+              {note.history.slice(-3).map((ghost, i) => (
+                <div 
+                  key={ghost.timestamp} 
+                  className="absolute inset-0 opacity-[0.03] group-hover/code:opacity-[0.08] transition-opacity duration-[3000ms] mix-blend-screen"
+                  style={{
+                    transform: `translate(${(i+1) * 3}px, ${(i+1) * 2}px) scale(${1 + (i*0.005)})`,
+                    filter: `blur(${1}px)`
+                  }}
+                >
+                  <SyntaxHighlighter
+                    language={note.language}
+                    style={oneDark}
+                    customStyle={{ margin: 0, padding: '1.5rem', background: 'transparent' }}
+                  >
+                    {ghost.code}
+                  </SyntaxHighlighter>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="relative z-10">
+            <SyntaxHighlighter
+              language={note.language}
+              style={oneDark}
+              customStyle={{
+                margin: 0,
+                borderRadius: 0,
+                fontSize: settings?.codeFontSize || '0.9rem',
+                lineHeight: '1.6',
+                padding: '1.5rem',
+                background: 'transparent',
+              }}
+              codeTagProps={{
+                style: {
+                  fontFamily: '"JetBrains Mono", monospace',
+                }
+              }}
+              showLineNumbers
+            >
+              {note.code}
+            </SyntaxHighlighter>
+          </div>
         </div>
       )}
 

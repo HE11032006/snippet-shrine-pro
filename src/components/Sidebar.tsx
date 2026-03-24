@@ -17,7 +17,8 @@ import {
   FolderOpen,
   ChevronDown,
   BookOpen,
-  Share2
+  Share2,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -51,6 +52,7 @@ interface SidebarProps {
   onToggleCollapse: () => void;
   onNewDailyLog: () => void;
   onOpenGraph: () => void;
+  onOpenAlchemy: () => void;
 }
 
 // Local Component: SmartFolders
@@ -234,6 +236,7 @@ export function Sidebar({
   onToggleCollapse,
   onNewDailyLog,
   onOpenGraph,
+  onOpenAlchemy,
 }: SidebarProps) {
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
@@ -366,6 +369,33 @@ export function Sidebar({
               </button>
             </TooltipTrigger>
             {collapsed && <TooltipContent side="right">Journal de Bord</TooltipContent>}
+          </Tooltip>
+        </div>
+
+        {/* Alchemy Cauldron Section */}
+        <div className="px-2 mb-6">
+          {!collapsed && (
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60">Intelligence Artificielle</h3>
+            </div>
+          )}
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onOpenAlchemy}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all group",
+                  "text-muted-foreground hover:bg-pink-500/10 hover:text-pink-500",
+                  collapsed && "justify-center px-0 h-10 w-10 mx-auto"
+                )}
+              >
+                <Sparkles className={cn(collapsed ? "w-6 h-6" : "w-4 h-4", "opacity-60 group-hover:opacity-100 transition-opacity")} />
+                {!collapsed && (
+                  <span className="flex-1 text-sm font-medium text-left">Chaudron Alchimique</span>
+                )}
+              </button>
+            </TooltipTrigger>
+            {collapsed && <TooltipContent side="right">Chaudron Alchimique</TooltipContent>}
           </Tooltip>
         </div>
 
