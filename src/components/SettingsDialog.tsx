@@ -13,6 +13,7 @@ import { Settings2, Type, Code2, Palette, GitBranch, Folder, ArrowUp, ArrowDown,
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Sparkles } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +29,8 @@ interface SettingsDialogProps {
     gitRemoteUrl: string;
     vaults: string[];
     currentVault: string;
+    geminiApiKey: string;
+    soundEnabled: boolean;
   };
   onUpdateSettings: (newSettings: any) => void;
 }
@@ -79,6 +82,13 @@ export function SettingsDialog({ isOpen, onClose, settings, onUpdateSettings }: 
               >
                 <GitBranch className="w-4 h-4" /> 
                 <span className="font-semibold text-sm">Dépôts Git</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="ai" 
+                className="justify-start gap-3 px-4 py-2.5 rounded-sm data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+              >
+                <Sparkles className="w-4 h-4" /> 
+                <span className="font-semibold text-sm">IA & Alchimie</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -202,6 +212,17 @@ export function SettingsDialog({ isOpen, onClose, settings, onUpdateSettings }: 
                           Amber Brown
                         </Button>
                       </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-muted/20 border border-border rounded-sm">
+                      <div className="space-y-1">
+                        <Label className="text-sm font-semibold">Effets Synesthésiques (Son & Vibration)</Label>
+                        <p className="text-xs text-muted-foreground">Retour immersif selon le poids algorithmique du code</p>
+                      </div>
+                      <Switch 
+                        checked={settings.soundEnabled ?? true} 
+                        onCheckedChange={(val) => onUpdateSettings({ ...settings, soundEnabled: val })} 
+                      />
                     </div>
                   </div>
                 </div>
@@ -378,6 +399,31 @@ export function SettingsDialog({ isOpen, onClose, settings, onUpdateSettings }: 
                         </p>
                       </div>
                     )}
+                  </div>
+                 </div>
+              </TabsContent>
+
+              <TabsContent value="ai" className="space-y-8 mt-0 focus-visible:outline-none focus-visible:ring-0">
+                 <div>
+                  <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                    Intelligence Artificielle & Alchimie
+                  </h3>
+                  
+                  <div className="space-y-6 max-w-xl">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Clé API Google Gemini</Label>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        Cette clé est nécessaire pour utiliser le Chaudron Alchimique (Concept 4) et fusionner des snippets.
+                      </p>
+                      <Input 
+                        type="password"
+                        value={settings.geminiApiKey || ''} 
+                        onChange={(e) => onUpdateSettings({ ...settings, geminiApiKey: e.target.value })}
+                        placeholder="AIzaSy..." 
+                        className="h-10 rounded-sm font-mono" 
+                      />
+                    </div>
                   </div>
                  </div>
               </TabsContent>

@@ -411,6 +411,18 @@
     }
   }
 
+  @keyframes heavyShake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px) translateY(2px) rotate(-0.5deg); }
+    20%, 40%, 60%, 80% { transform: translateX(4px) translateY(-2px) rotate(0.5deg); }
+  }
+
+  .synesthetic-shake {
+    animation: heavyShake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+    transform-origin: center center;
+    transition: filter 0.3s ease-out;
+  }
+
   /* TipTap Specific Styles */
   .ProseMirror {
     @apply outline-none selection:bg-primary/20;

@@ -19,6 +19,7 @@ import { NoteTemplate, NOTE_TEMPLATES } from '@/components/NoteTemplates';
 import { Button } from '@/components/ui/button';
 import { SettingsDialog } from '@/components/SettingsDialog';
 import { GraphView } from '@/components/GraphView';
+import { AlchemyCauldron } from '@/components/AlchemyCauldron';
 import { 
   PanelGroup, 
   Panel, 
@@ -37,7 +38,9 @@ const Index = () => {
       gitAutoSync: false,
       gitRemoteUrl: '',
       vaults: [],
-      currentVault: ''
+      currentVault: '',
+      geminiApiKey: '',
+      soundEnabled: true
     };
   });
 
@@ -46,7 +49,7 @@ const Index = () => {
     localStorage.setItem('shrine-settings', JSON.stringify(settings));
   }, [settings]);
 
-  const { notes, isLoaded, addNote, updateNote, deleteNote, getCategories, getSubcategories, getAllTags, duplicateNote, importNotes, toggleStar } = useNotes(settings.currentVault);
+  const { notes, isLoaded, addNote, updateNote, deleteNote, getCategories, getSubcategories, getAllTags, duplicateNote, importNotes, toggleStar, incrementViewCount } = useNotes(settings.currentVault);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -63,6 +66,7 @@ const Index = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isZenMode, setIsZenMode] = useState(false);
   const [isGraphOpen, setIsGraphOpen] = useState(false);
+  const [isAlchemyOpen, setIsAlchemyOpen] = useState(false);
 
   // Apply theme class to html element
   useEffect(() => {
@@ -314,8 +318,9 @@ const Index = () => {
       handleToggleSelect(noteId);
     } else {
       setSelectedNoteId(noteId);
+      incrementViewCount(noteId);
     }
-  }, [isSelectionMode, handleToggleSelect]);
+  }, [isSelectionMode, handleToggleSelect, incrementViewCount]);
 
   const handleMoveNoteToCategory = useCallback((noteId: string, category: string) => {
     const note = notes.find(n => n.id === noteId);
@@ -464,6 +469,7 @@ ${note.code}
             onToggleCollapse={handleToggleSidebar}
             onNewDailyLog={handleNewDailyLog}
             onOpenGraph={() => setIsGraphOpen(true)}
+            onOpenAlchemy={() => setIsAlchemyOpen(true)}
           />
         </aside>
       )}
@@ -627,10 +633,22 @@ ${note.code}
                 setSelectedNoteId(id);
                 setIsGraphOpen(false);
               }}
+              onUpdateNote={updateNote}
             />
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AlchemyCauldron
+        isOpen={isAlchemyOpen}
+        onClose={() => setIsAlchemyOpen(false)}
+        notes={notes}
+        apiKey={settings.geminiApiKey}
+        onSaveMutant={(data) => {
+          addNote(data);
+          toast({ title: 'Mutant sauvegardé', description: 'Le composant a été ajouté à votre bibliothèque.' });
+        }}
+      />
     </div>
   );
 };
