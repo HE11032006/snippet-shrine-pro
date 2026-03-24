@@ -434,45 +434,39 @@ ${note.code}
     <div className="h-screen w-full bg-background overflow-hidden flex relative">
       {/* Column 1: Sidebar - Fixed width, sticky to snippet list */}
       {/* Column 1: Sidebar - Fixed width, sticky to snippet list */}
-      <AnimatePresence>
-        {!isZenMode && (
-          <motion.aside 
-            key="sidebar"
-            initial={{ x: -260, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -260, opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className={cn(
-              "h-full bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out z-20 shrink-0 overflow-hidden",
-              isSidebarCollapsed ? "w-16" : "w-64"
-            )}
-          >
-            <Sidebar
-              categories={categories}
-              selectedCategory={selectedCategory}
-              selectedSubcategory={selectedSubcategory}
-              onSelectCategory={handleSelectCategory}
-              onNewNote={handleNewNote}
-              notesCount={notes.length}
-              notes={notes}
-              onImport={importNotes}
-              tags={allTags}
-              selectedTags={selectedTags}
-              onToggleTag={handleToggleTag}
-              onClearTags={handleClearTags}
-              displayDensity={displayDensity}
-              onToggleDensity={() => setDisplayDensity(prev => prev === 'compact' ? 'cozy' : 'compact')}
-              onOpenSettings={() => setIsSettingsOpen(true)}
-              onToggleZen={() => setIsZenMode(prev => !prev)}
-              onMoveNoteToCategory={handleMoveNoteToCategory}
-              collapsed={isSidebarCollapsed}
-              onToggleCollapse={handleToggleSidebar}
-              onNewDailyLog={handleNewDailyLog}
-              onOpenGraph={() => setIsGraphOpen(true)}
-            />
-          </motion.aside>
-        )}
-      </AnimatePresence>
+      {/* Column 1: Sidebar - Fixed width, sticky to snippet list */}
+      {!isZenMode && (
+        <aside 
+          className={cn(
+            "h-full bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out z-20 shrink-0 overflow-hidden",
+            isSidebarCollapsed ? "w-16" : "w-64"
+          )}
+        >
+          <Sidebar
+            categories={categories}
+            selectedCategory={selectedCategory}
+            selectedSubcategory={selectedSubcategory}
+            onSelectCategory={handleSelectCategory}
+            onNewNote={handleNewNote}
+            notesCount={notes.length}
+            notes={notes}
+            onImport={importNotes}
+            tags={allTags}
+            selectedTags={selectedTags}
+            onToggleTag={handleToggleTag}
+            onClearTags={handleClearTags}
+            displayDensity={displayDensity}
+            onToggleDensity={() => setDisplayDensity(prev => prev === 'compact' ? 'cozy' : 'compact')}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onToggleZen={() => setIsZenMode(prev => !prev)}
+            onMoveNoteToCategory={handleMoveNoteToCategory}
+            collapsed={isSidebarCollapsed}
+            onToggleCollapse={handleToggleSidebar}
+            onNewDailyLog={handleNewDailyLog}
+            onOpenGraph={() => setIsGraphOpen(true)}
+          />
+        </aside>
+      )}
 
       {/* Main Resizable Area */}
       <PanelGroup direction="horizontal" className="flex-1">
@@ -549,6 +543,7 @@ ${note.code}
                     existingSubcategories={allSubcategories}
                     onSave={handleSaveNote}
                     onCancel={handleCancelForm}
+                    isZenMode={isZenMode}
                     onSelectNoteByTitle={(title) => {
                       const found = notes.find(n => n.title.toLowerCase() === title.toLowerCase());
                       if (found) setSelectedNoteId(found.id);

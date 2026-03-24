@@ -8,6 +8,7 @@ import TaskItem from '@tiptap/extension-task-item';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import Strike from '@tiptap/extension-strike';
+import Link from '@tiptap/extension-link';
 import { Markdown } from 'tiptap-markdown';
 import { CustomCodeBlock } from './extensions/CodeBlockExtension';
 import { WikiLink } from './extensions/WikiLinkExtension';
@@ -23,6 +24,7 @@ import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough, Palette
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 import { NOTE_TEMPLATES } from '@/components/NoteTemplates';
 
 const LANGUAGES = [
@@ -52,6 +54,7 @@ interface FullPageEditorProps {
   onSave: (data: NoteFormData) => void;
   onCancel: () => void;
   onSelectNoteByTitle?: (title: string) => void;
+  isZenMode?: boolean;
 }
 
 export function FullPageEditor({
@@ -62,7 +65,8 @@ export function FullPageEditor({
   notes = [],
   onSave,
   onCancel,
-  onSelectNoteByTitle
+  onSelectNoteByTitle,
+  isZenMode = false
 }: FullPageEditorProps) {
   const [formData, setFormData] = useState<NoteFormData>(() => {
     let initialDesc = note?.description || '';
@@ -83,6 +87,7 @@ export function FullPageEditor({
   const [tagInput, setTagInput] = useState('');
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashQuery, setSlashQuery] = useState('');
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
 
   const backlinks = useMemo(() => {
     if (!note) return [];
@@ -123,6 +128,12 @@ export function FullPageEditor({
       TextStyle,
       Color,
       Strike,
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          class: 'text-primary underline cursor-pointer',
+        },
+      }),
       TaskList,
       TaskItem.configure({
         nested: true,
@@ -146,6 +157,17 @@ export function FullPageEditor({
       if (slashIndex !== -1) {
         const query = textAfterSlash.slice(slashIndex + 1);
         if (!query.includes(' ')) {
+          // Calculate position
+          const { view } = editor;
+          const { from } = selection;
+          const coords = view.coordsAtPos(from);
+          const editorBounds = view.dom.getBoundingClientRect();
+          
+          setMenuPosition({
+            top: coords.top - editorBounds.top + view.dom.scrollTop,
+            left: coords.left - editorBounds.left,
+          });
+          
           setShowSlashMenu(true);
           setSlashQuery(query.toLowerCase());
           return;
@@ -213,6 +235,12 @@ export function FullPageEditor({
     { id: 'quote', label: 'Citation', icon: Quote, command: () => editor?.chain().focus().toggleBlockquote().run() },
     { id: 'code', label: 'Bloc de Code', icon: Code2, command: handleShowCode },
     { id: 'divider', label: 'Séparateur', icon: Minus, command: () => editor?.chain().focus().setHorizontalRule().run() },
+    { id: 'link', label: 'Lien Standard', icon: Link2, command: () => {
+      const url = window.prompt('Entrez l\'URL du lien :');
+      if (url) {
+        editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+      }
+    }},
     { id: 'journal', label: 'Modèle Journal', icon: BookOpen, command: () => editor?.commands.insertContent(NOTE_TEMPLATES.find(t => t.id === 'daily-log')?.data.description || '') },
     { id: 'bug', label: 'Modèle Bug', icon: Bug, command: () => editor?.commands.insertContent(NOTE_TEMPLATES.find(t => t.id === 'bug-fix')?.data.description || '') },
   ];
@@ -276,9 +304,12 @@ export function FullPageEditor({
   };
 
   return (
-    <div className="flex flex-col h-full bg-background overflow-y-auto animate-fade-in">
+    <div className="flex flex-col h-full bg-background overflow-y-auto animate-fade-in group">
       {/* Top Header / Metadata Bar */}
-      <div className="flex items-center justify-between px-8 py-4 border-b border-border/50 bg-muted/20 sticky top-0 z-10 backdrop-blur-md">
+      <div className={cn(
+        "flex items-center justify-between px-8 py-4 border-b border-border/50 bg-muted/20 sticky top-0 z-10 backdrop-blur-md transition-all",
+        isZenMode && "pl-16"
+      )}>
         <div className="flex items-center gap-3 flex-wrap">
           {/* Category Input/Select */}
           {showNewCategory ? (
@@ -403,7 +434,13 @@ export function FullPageEditor({
         <div className="min-h-[300px] mb-8 relative">
           
           {showSlashMenu && (
-            <div className="absolute z-50 left-0 mt-8 flex flex-col p-1 bg-card/98 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl w-64 animate-scale-in max-h-[400px] overflow-y-auto">
+            <div 
+              className="absolute z-50 flex flex-col p-1 bg-card border border-border/50 rounded-xl shadow-2xl w-64 animate-scale-in max-h-[400px] overflow-y-auto"
+              style={{ 
+                top: `${menuPosition.top + 25}px`, 
+                left: `${Math.min(menuPosition.left, (editor?.view.dom.clientWidth || 800) - 260)}px` 
+              }}
+            >
               <div className="px-3 py-2 flex items-center justify-between border-b border-border/30 mb-1">
                 <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Commandes</span>
                 {slashQuery && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">/{slashQuery}</span>}
