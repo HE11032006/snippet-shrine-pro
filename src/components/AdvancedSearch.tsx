@@ -71,13 +71,13 @@ export function AdvancedSearch({ filters, onChange, languages, allTags }: Advanc
       </Button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-3 w-80 p-5 bg-background/95 backdrop-blur-xl border border-border/60 rounded-2xl shadow-2xl z-50 space-y-5 animate-in fade-in slide-in-from-top-3 duration-300">
+        <div className="absolute top-full right-0 mt-3 w-80 p-5 bg-popover text-popover-foreground border border-border shadow-2xl z-[100] space-y-5 animate-in fade-in slide-in-from-top-3 duration-300 rounded-md">
           <div className="flex items-center justify-between mb-1">
             <h3 className="text-sm font-bold flex items-center gap-2">
               <Search className="w-4 h-4 text-primary" />
               Recherche Avancée
             </h3>
-            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-6 w-6 rounded-lg">
+            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-6 w-6">
               <X className="w-3 h-3" />
             </Button>
           </div>
