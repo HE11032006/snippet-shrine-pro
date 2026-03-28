@@ -254,11 +254,7 @@ export function FullPageEditor({
       toast({ title: 'Erreur', description: 'Le titre et la catégorie sont requis.', variant: 'destructive' });
       return;
     }
-    // Remove code if it wasn't toggled but has text, or keep it depending on rules. We just save the form data.
-    onSave({
-      ...formData,
-      // Markdown-like description is automatically maintained by TipTap (getHTML())
-    });
+    onSave({ ...formData });
   };
 
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {

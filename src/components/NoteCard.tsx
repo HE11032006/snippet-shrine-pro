@@ -428,8 +428,10 @@ ${note.code}
               {note.history.slice(-3).map((ghost, i) => (
                 <div 
                   key={ghost.timestamp} 
-                  className="absolute inset-0 opacity-[0.03] group-hover/code:opacity-[0.08] transition-opacity duration-[3000ms] mix-blend-screen"
+                  className="absolute inset-0 opacity-[0.03] group-hover/code:opacity-[0.08] mix-blend-screen"
                   style={{
+                    transitionProperty: 'opacity',
+                    transitionDuration: '3000ms',
                     transform: `translate(${(i+1) * 3}px, ${(i+1) * 2}px) scale(${1 + (i*0.005)})`,
                     filter: `blur(${1}px)`
                   }}

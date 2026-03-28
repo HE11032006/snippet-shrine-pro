@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Code2, Trash2 } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 const LANGUAGES = [
   { value: 'python', label: 'Python' },
@@ -41,24 +41,23 @@ const CodeMirrorNodeView = ({ node, editor, getPos, updateAttributes, deleteNode
     localStorage.setItem('shrine-vim-mode', String(checked));
   };
 
+  // Original working approach: write directly into TipTap's document via transaction
   const handleCodeChange = useCallback((value: string) => {
     const pos = getPos();
     if (typeof pos !== 'number') return;
-    
-    // Au lieu de tr.replaceWith qui peut causer des problèmes de curseur si on tape vite,
-    // On met à jour le texte du noeud sans bloquer la vue CodeMirror.
+
     const tr = editor.state.tr;
     if (value) {
       tr.replaceWith(pos + 1, pos + node.nodeSize - 1, editor.schema.text(value));
     } else {
       tr.delete(pos + 1, pos + node.nodeSize - 1);
     }
-    // Set meta to prevent TipTap from resetting focus to the Editor when updating
     tr.setMeta('preventUpdate', true);
     editor.view.dispatch(tr);
   }, [editor, getPos, node.nodeSize]);
 
-  const getExtensions = () => {
+  // Memoize extensions so CodeMirror does NOT reinitialize when language changes
+  const extensions = useMemo(() => {
     const exts = [];
     if (isVimMode) {
       exts.push(vim({ status: true }));
@@ -69,7 +68,7 @@ const CodeMirrorNodeView = ({ node, editor, getPos, updateAttributes, deleteNode
       }
     } catch { /* ignore */ }
     return exts;
-  };
+  }, [language, isVimMode]);
 
   return (
     <NodeViewWrapper className="mt-6 mb-6 animate-slide-up group" contentEditable={false}>
@@ -89,15 +88,15 @@ const CodeMirrorNodeView = ({ node, editor, getPos, updateAttributes, deleteNode
             </SelectContent>
           </Select>
         </div>
-        
+
         <div className="flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="flex items-center gap-1.5">
             <Label className="text-[10px] text-muted-foreground cursor-pointer">NeoVim</Label>
             <Switch checked={isVimMode} onCheckedChange={handleVimModeToggle} className="scale-50 data-[state=checked]:bg-primary" />
           </div>
-          <button 
-            type="button" 
-            onClick={deleteNode} 
+          <button
+            type="button"
+            onClick={deleteNode}
             className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded-md hover:bg-destructive/10"
             title="Supprimer le bloc"
           >
@@ -105,7 +104,7 @@ const CodeMirrorNodeView = ({ node, editor, getPos, updateAttributes, deleteNode
           </button>
         </div>
       </div>
-      
+
       {/* Éditeur CodeMirror */}
       <div className="rounded-xl overflow-hidden border border-border/50 shadow-inner group-focus-within:border-primary/50 group-focus-within:ring-1 group-focus-within:ring-primary/20 transition-all">
         <CodeMirror
@@ -113,7 +112,7 @@ const CodeMirrorNodeView = ({ node, editor, getPos, updateAttributes, deleteNode
           height="auto"
           minHeight="100px"
           theme={oneDark}
-          extensions={getExtensions()}
+          extensions={extensions}
           onChange={handleCodeChange}
           className="text-sm font-mono [&_.cm-editor]:outline-none"
           basicSetup={{
@@ -142,7 +141,7 @@ export const CustomCodeBlock = CodeBlock.extend({
       },
     }
   },
-  
+
   addNodeView() {
     return ReactNodeViewRenderer(CodeMirrorNodeView);
   },

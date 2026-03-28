@@ -1,59 +1,57 @@
-# HE - The Ultimate Developer's Second Brain 🧠💻
+# HE - Second Cerveau pour Developpeurs
 
-**HE** (anciennement Memory Notes) est une application de prise de notes et de gestion de snippets de code, pensée de A à Z par et pour les développeurs. Elle associe la puissance d'un éditeur professionnel à la simplicité d'un outil de productivité structuré.
+HE est une plateforme de gestion de connaissances et de snippets de code concue pour depasser les limites des outils lineaires classiques. Cette version 2.0 transforme l'application en un environnement organique et sensoriel.
 
-![HE Interface Preview](https://via.placeholder.com/800x450/0d0d0f/00f2ff?text=HE+Interface+-+Obsidian+Dark)
+## Concepts Fondamentaux de la Version 2.0
 
-## ✨ Fonctionnalités Principales (Version 1.0)
+### 1. Obsolescence Organique
+Les snippets ne sont plus des donnees statiques. Ils vivent et vieillissent selon votre utilisation. Un code frequemment consulte gagne en eclat et en importance visuelle, tandis qu'un snippet delaisse s'assombrit, se grise ou se floute legerement avec le temps. Cela permet d'identifier instinctivement les parties mortes de votre base de connaissances.
 
-- ⌨️ **Éditeur Pro (Mode NeoVim)** : Éditeur de code intégré basé sur `CodeMirror 6` avec auto-complétion, coloration syntaxique dynamique pour +30 langages, et un véritable **Mode NeoVim** activable dans l'interface pour une productivité maximale.
-- 🔄 **Synchronisation Git Native** : Vos données vous appartiennent. Liez l'application à un dépôt local, exportez automatiquement vos snippets en `.md` et faites vos `Push`/`Pull` vers GitHub/GitLab directement depuis les paramètres.
-- 📄 **Export Multi-Format Haute Fidélité** : Exportez chaque note au format **PDF** isolé (grâce au moteur Electron), **HTML** autonome, **Markdown** brut, ou capturez une **Image (PNG)** de votre snippet magnifiquement formaté.
-- 📓 **Journal de Bord (Daily Log)** : Fonctionnalité "1-clic" pour générer un template structuré de votre journée de développement (Objectifs, Bugs rencontrés, Notes).
-- 🎨 **Design "Obsidian Dark"** : Une interface sombre (glassmorphism), mature et épurée, inspirée de Notion et Obsidian. Finitions soignées avec icônes dynamiques par langage.
-- 🗂️ **Organisation Puissante** : Catégories étendues, sous-catégories liées, dossiers intelligents (Récents, Favoris), système de tags et recherche globale multi-critères.
+### 2. Graphe de Connexion Dynamique
+Visualisation spatiale de vos notes basee sur les liens semantiques. Le graphe permet de naviguer entre les concepts de maniere non lineaire. Les liens sont representes physiquement et permettent de detecter les amas de connaissances ou les notes isolees. Le systeme de filtrage par categorie permet d'isoler des zones specifiques du cerveau numerique.
 
-## 🛠️ Stack Technique
+### 3. Feedback Synesthesique
+L'interaction avec le code devient sensorielle. L'application genere des textures sonores et des micro-vibrations visuelles basees sur la complexite algorithmique du code que vous manipulez. Un code lourd ou complexe produira un retour different d'un script leger, creant une connexion physique entre le developpeur et sa logique.
 
-- **Frontend** : React 18, TypeScript, Vite
-- **Desktop Engine** : Electron (Support complet natif, exports PDF)
-- **Styling** : Tailwind CSS, Radix UI (shadcn/ui), Lucide Icons
-- **Éditeur de code** : CodeMirror 6, @replit/codemirror-vim
-- **Utilitaires** : React Router, html-to-image, React Markdown
+### 4. Chaudron Alchimique (IA Gemini)
+Integration de l'intelligence artificielle pour la fusion de composants. Le Chaudron permet de selectionner deux snippets existants pour les faire muter en une nouvelle entite hybride. Ce processus utilise l'API Gemini pour generer des solutions creatives et inattendues a partir de vos propres briques de code.
 
-## 🚀 Installation & Lancement
+### 5. Fantomes de l'Historique
+Le code conserve une memoire de ses etats passes. Lors de l'edition, les anciennes versions apparaissent subtilement sous forme de couches fantomatiques derriere le code actuel. Cela permet de visualiser literalement l'evolution d'une logique sans avoir a consulter un historique de commits classique.
 
-Prérequis : Node.js (v18+) et npm.
+## Fonctionnalites Standards
+
+- Editeur avance avec support de nombreux langages et coloration syntaxique.
+- Mode Vim integrable pour une saisie rapide.
+- Synchronisation Git locale pour la securite des donnees.
+- Export multi-format en PDF, HTML, Markdown et image PNG.
+- Journal de bord quotidien pour le suivi des objectifs.
+- Gestion par categories, sous-categories et systeme de tags.
+
+## Installation technique
+
+Configuration requise : Node.js (v18+) et npm.
 
 ```bash
-# 1. Cloner le dépôt
-git clone https://github.com/HE11032006/snippet-shrine-pro.git
-cd snippet-shrine-pro
-
-# 2. Installer les dépendances
+# Installation des dependances
 npm install
 
-# 3. Lancer l'application en mode Web (Développement)
+# Lancement en mode developpement
 npm run dev
 
-# 4. Lancer l'application en mode Bureau (Electron)
+# Lancement de la version bureau (Electron)
 npm start
 ```
 
-## 📦 Build / Distribution
+## Construction de l'executable
 
-Pour compiler l'application de bureau pour votre plateforme (Windows, macOS, Linux) :
+Pour generer l'application au format desktop (executable) pour votre systeme :
 
 ```bash
 npm run dist
 ```
-L'exécutable généré se trouvera dans le dossier `dist_electron/`.
+Les fichiers generes se trouvent dans le repertoire dist_electron.
 
-## 🤝 Contribuer & Roadmap V2
+## Licence
+Consulter le fichier LICENCE.md pour plus de details.
 
-Ce projet est la fondation solide d'un véritable outil de Knowledge Management pour dev. La **V2** est en phase de conception avec potentiellement :
-- Backend Cloud / Supabase pour le temps réel
-- Système de plugins
-- Auto-tagging par IA
-
-Les contributions, issues et PRs sont les bienvenues !
